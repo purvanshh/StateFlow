@@ -1,0 +1,120 @@
+.main {
+    min-height: 100vh;
+    padding: 80px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.hero {
+    text-align: center;
+    padding: 60px 0 80px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: clamp(40px, 8vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+}
+
+.gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.description {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+}
+
+.actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.primaryBtn {
+    padding: 14px 28px;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 12px;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.primaryBtn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.secondaryBtn {
+    padding: 14px 28px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 12px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.secondaryBtn:hover {
+    background: var(--surface);
+    border-color: var(--text-muted);
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+}
+
+.feature {
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.feature:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+}
+
+.featureIcon {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+.feature h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.feature p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}

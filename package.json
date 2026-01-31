@@ -1,0 +1,27 @@
+{
+  "name": "stateflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-style workflow automation platform",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:web": "pnpm --filter @stateflow/web dev",
+    "dev:api": "pnpm --filter @stateflow/api dev",
+    "build": "pnpm run -r build",
+    "lint": "pnpm run -r lint",
+    "typecheck": "pnpm run -r typecheck",
+    "clean": "pnpm run -r clean && rm -rf node_modules"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "tsx": "^4.7.0"
+  }
+}
