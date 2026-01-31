@@ -5,6 +5,8 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   executionId?: string;
+  workflowName?: string;
+  workflowVersion?: number;
   stepId?: string;
   workerId?: string;
   attempt?: number;

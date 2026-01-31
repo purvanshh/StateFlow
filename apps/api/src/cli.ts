@@ -49,7 +49,7 @@ async function main() {
     console.log(`
 StateFlow CLI
 
-Commands:
+  Commands:
   list              List recent executions
   failed            List failed executions
   dlq               List dead letter queue
@@ -58,9 +58,11 @@ Commands:
   retry <id>        Retry a failed execution from start
   retry-step <id>   Retry a failed execution from failed step
   health            Show worker health
-
-Options:
-  --help            Show this help
+  workflows         List all workflows
+  validate <file>   Validate workflow definition from JSON file
+  reset             Reset demo data
+  metrics           Show system metrics
+  export            Export metrics in JSON format
         `);
     return;
   }
@@ -238,6 +240,116 @@ Options:
       }
       const data = result.data as { data: { executionId: string } };
       console.log(`New execution started: ${data.data.executionId}`);
+      break;
+    }
+
+    case 'retry-step': {
+      const id = process.argv[3];
+      if (!id) {
+        console.error('Usage: stateflow retry-step <execution-id>');
+        return;
+      }
+      const result = await request('POST', `/api/executions/${id}/retry-step`);
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      console.log(`Step retry initiated for execution: ${id}`);
+      break;
+    }
+
+    case 'workflows': {
+      const result = await request('GET', '/api/workflows');
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      const data = result.data as {
+        data: Array<{ id: string; name: string; version: number; status: string }>;
+        total: number;
+      };
+      console.log('\nWorkflows:\n');
+      console.log('ID'.padEnd(30) + 'Name'.padEnd(25) + 'Version'.padEnd(10) + 'Status');
+      console.log('-'.repeat(74));
+      for (const w of data.data) {
+        console.log(
+          w.id.substring(0, 30).padEnd(30) +
+            w.name.substring(0, 25).padEnd(25) +
+            String(w.version).padEnd(10) +
+            w.status
+        );
+      }
+      console.log(`\nTotal: ${data.total} workflows`);
+      break;
+    }
+
+    case 'validate': {
+      const file = process.argv[3];
+      if (!file) {
+        console.error('Usage: stateflow validate <workflow-file.json>');
+        return;
+      }
+      // Note: File validation requires reading local file
+      // For API-only CLI, we'll use a POST endpoint
+      const result = await request('POST', '/api/workflows/validate', { file });
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      console.log('✓ Workflow definition is valid');
+      break;
+    }
+
+    case 'reset': {
+      const result = await request('POST', '/api/system/reset', {});
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      console.log('✓ Demo data reset successfully');
+      break;
+    }
+
+    case 'metrics': {
+      const result = await request('GET', '/api/metrics');
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      const data = result.data as {
+        summary: {
+          total_executions: number;
+          completed: number;
+          failed: number;
+          pending: number;
+          running: number;
+          success_rate_percent: number;
+          dlq_entries: number;
+        };
+      };
+      console.log('\nSystem Metrics:\n');
+      console.log(`Total Executions: ${data.summary.total_executions}`);
+      console.log(`Completed: ${data.summary.completed}`);
+      console.log(`Failed: ${data.summary.failed}`);
+      console.log(`Pending: ${data.summary.pending}`);
+      console.log(`Running: ${data.summary.running}`);
+      console.log(`Success Rate: ${data.summary.success_rate_percent}%`);
+      console.log(`DLQ Entries: ${data.summary.dlq_entries}`);
+      break;
+    }
+
+    case 'export': {
+      const format = process.argv[3] || 'json';
+      const result = await request('GET', '/api/metrics');
+      if (result.error) {
+        console.error('Error:', result.error);
+        return;
+      }
+      if (format === 'json') {
+        console.log(JSON.stringify(result.data, null, 2));
+      } else {
+        console.error('Unsupported format. Use: json');
+      }
       break;
     }
 

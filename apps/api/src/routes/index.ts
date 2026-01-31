@@ -4,11 +4,15 @@ import { workflowsRouter } from './workflows.js';
 import { executionsRouter } from './executions.js';
 import { eventsRouter } from './events.js';
 import { metricsRouter } from './metrics.js';
+import { adminRouter } from './admin.js';
 
 const router: Router = Router();
 
 // Health check
 router.use('/health', healthRouter);
+
+// Admin dashboard
+router.use('/admin', adminRouter);
 
 // Events (trigger workflows)
 router.use('/events', eventsRouter);
@@ -19,9 +23,7 @@ router.use('/metrics', metricsRouter);
 // Workflow routes
 router.use('/workflows', workflowsRouter);
 
-// Execution routes  
+// Execution routes
 router.use('/executions', executionsRouter);
 
 export { router };
-
-
