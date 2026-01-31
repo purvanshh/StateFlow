@@ -83,11 +83,14 @@ interface DemoExecution {
     id: string;
     workflowId: string;
     workflowName: string;
-    status: 'pending' | 'running' | 'completed' | 'failed';
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'retry_scheduled';
     input: Record<string, unknown>;
     output: Record<string, unknown> | null;
     error: string | null;
     idempotencyKey?: string;
+    nextRetryAt?: Date;
+    retryCount?: number;
+    currentStepId?: string;
     steps: Array<{
         stepId: string;
         status: string;
@@ -108,14 +111,81 @@ interface DemoExecution {
     completedAt: Date | null;
 }
 
+import fs from 'fs';
+import path from 'path';
+
+// ... (existing interfaces)
+
 class DemoStore {
     private workflows: Map<string, DemoWorkflow> = new Map();
     private executions: Map<string, DemoExecution> = new Map();
-    private idempotencyKeys: Map<string, string> = new Map(); // key -> executionId
+    private idempotencyKeys: Map<string, string> = new Map();
+    private persistencePath = path.resolve(process.cwd(), '.data/store.json');
 
     constructor() {
-        // Seed demo workflow
-        this.seedDemoWorkflow();
+        this.load();
+
+        // Seed if empty
+        if (this.workflows.size === 0) {
+            this.seedDemoWorkflow();
+        }
+    }
+
+    private load() {
+        try {
+            if (fs.existsSync(this.persistencePath)) {
+                const data = JSON.parse(fs.readFileSync(this.persistencePath, 'utf8'));
+
+                // Rehydrate maps
+                if (data.workflows) {
+                    data.workflows.forEach((w: any) => this.workflows.set(w.id, {
+                        ...w, createdAt: new Date(w.createdAt)
+                    }));
+                }
+
+                if (data.executions) {
+                    data.executions.forEach((e: any) => this.executions.set(e.id, {
+                        ...e,
+                        createdAt: new Date(e.createdAt),
+                        startedAt: e.startedAt ? new Date(e.startedAt) : null,
+                        completedAt: e.completedAt ? new Date(e.completedAt) : null,
+                        steps: e.steps.map((s: any) => ({
+                            ...s,
+                            startedAt: s.startedAt ? new Date(s.startedAt) : null,
+                            completedAt: s.completedAt ? new Date(s.completedAt) : null,
+                        })),
+                        logs: e.logs.map((l: any) => ({ ...l, timestamp: new Date(l.timestamp) }))
+                    }));
+                }
+
+                if (data.idempotencyKeys) {
+                    data.idempotencyKeys.forEach(([k, v]: [string, string]) => this.idempotencyKeys.set(k, v));
+                }
+
+                console.log(`📦 Loaded ${this.executions.size} executions from storage`);
+            }
+        } catch (error) {
+            console.error('Failed to load persistence:', error);
+        }
+    }
+
+    private save() {
+        try {
+            const dir = path.dirname(this.persistencePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            const data = {
+                workflows: Array.from(this.workflows.values()),
+                executions: Array.from(this.executions.values()),
+                idempotencyKeys: Array.from(this.idempotencyKeys.entries()),
+            };
+
+            fs.writeFileSync(this.persistencePath, JSON.stringify(data, null, 2));
+        } catch (error) {
+            console.error('Failed to save persistence:', error);
+        }
     }
 
     private seedDemoWorkflow() {
@@ -128,6 +198,7 @@ class DemoStore {
             status: DEMO_WORKFLOW.status,
             createdAt: new Date(),
         });
+        this.save();
         console.log('📦 Seeded demo workflow:', DEMO_WORKFLOW.name);
     }
 
@@ -168,6 +239,9 @@ class DemoStore {
             createdAt: new Date(),
             startedAt: null,
             completedAt: null,
+            retryCount: 0,
+            nextRetryAt: undefined,
+            currentStepId: undefined,
         };
 
         this.executions.set(id, execution);
@@ -177,6 +251,7 @@ class DemoStore {
             this.idempotencyKeys.set(idempotencyKey, id);
         }
 
+        this.save();
         return execution;
     }
 
@@ -199,17 +274,36 @@ class DemoStore {
         );
     }
 
-    getPendingExecutions(limit: number): DemoExecution[] {
+    // Replace getPendingExecutions with smarter polling
+    getRunnableExecutions(limit: number): DemoExecution[] {
+        const now = new Date();
         return Array.from(this.executions.values())
-            .filter(e => e.status === 'pending')
-            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+            .filter(e => {
+                if (e.status === 'pending') return true;
+                if (e.status === 'retry_scheduled') {
+                    return e.nextRetryAt && e.nextRetryAt <= now;
+                }
+                return false;
+            })
+            .sort((a, b) => {
+                // Prioritize retries that are overdue, then oldest pending
+                const timeA = a.nextRetryAt || a.createdAt;
+                const timeB = b.nextRetryAt || b.createdAt;
+                return timeA.getTime() - timeB.getTime();
+            })
             .slice(0, limit);
+    }
+
+    // Kept for backward compatibility if needed, but worker should use getRunnableExecutions
+    getPendingExecutions(limit: number): DemoExecution[] {
+        return this.getRunnableExecutions(limit);
     }
 
     updateExecution(id: string, updates: Partial<DemoExecution>) {
         const execution = this.executions.get(id);
         if (execution) {
             Object.assign(execution, updates);
+            this.save();
         }
     }
 
@@ -217,6 +311,7 @@ class DemoStore {
         const execution = this.executions.get(id);
         if (execution) {
             execution.logs.push(log);
+            this.save();
             // Also log to console for visibility
             const emoji = log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : 'ℹ️';
             console.log(`${emoji} [${id.substring(0, 12)}] ${log.stepId ? `[${log.stepId}]` : ''} ${log.message}`);
@@ -232,6 +327,7 @@ class DemoStore {
             } else {
                 execution.steps.push(stepResult);
             }
+            this.save();
         }
     }
 }

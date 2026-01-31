@@ -56,8 +56,8 @@ class WorkflowWorker {
                 const availableSlots = WORKER_CONCURRENCY - this.activeExecutions.size;
 
                 if (availableSlots > 0) {
-                    // Get pending executions
-                    const pending = demoStore.getPendingExecutions(availableSlots);
+                    // Get pending and scheduled executions
+                    const pending = demoStore.getRunnableExecutions(availableSlots);
 
                     for (const execution of pending) {
                         // Skip if already processing

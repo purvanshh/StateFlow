@@ -1,0 +1,411 @@
+{
+  "workflows": [
+    {
+      "id": "demo-wf-001",
+      "name": "demo-workflow",
+      "description": "A demo workflow that fetches data and processes it with simulated failures",
+      "definition": {
+        "steps": [
+          {
+            "id": "start",
+            "type": "log",
+            "name": "Start Workflow",
+            "config": {
+              "message": "🚀 Starting demo workflow",
+              "level": "info"
+            },
+            "next": "fetch-data"
+          },
+          {
+            "id": "fetch-data",
+            "type": "http",
+            "name": "Fetch Sample Data",
+            "config": {
+              "url": "https://jsonplaceholder.typicode.com/posts/1",
+              "method": "GET"
+            },
+            "next": "process-data",
+            "retryPolicy": {
+              "maxAttempts": 3,
+              "delayMs": 1000,
+              "backoffMultiplier": 2
+            }
+          },
+          {
+            "id": "process-data",
+            "type": "transform",
+            "name": "Process Data",
+            "config": {
+              "mapping": {
+                "title": "fetch-data.data.title",
+                "body": "fetch-data.data.body"
+              }
+            },
+            "next": "check-result"
+          },
+          {
+            "id": "check-result",
+            "type": "condition",
+            "name": "Check Result",
+            "config": {
+              "field": "fetch-data.statusCode",
+              "operator": "eq",
+              "value": 200,
+              "onTrue": "success-log",
+              "onFalse": "failure-log"
+            }
+          },
+          {
+            "id": "success-log",
+            "type": "log",
+            "name": "Log Success",
+            "config": {
+              "message": "✅ Workflow completed successfully!",
+              "level": "info"
+            }
+          },
+          {
+            "id": "failure-log",
+            "type": "log",
+            "name": "Log Failure",
+            "config": {
+              "message": "❌ Workflow failed - HTTP request unsuccessful",
+              "level": "error"
+            }
+          }
+        ],
+        "trigger": {
+          "type": "manual"
+        }
+      },
+      "status": "active",
+      "createdAt": "2026-01-31T11:38:22.565Z"
+    }
+  ],
+  "executions": [
+    {
+      "id": "exec-1769859521495-94k72q",
+      "workflowId": "demo-wf-001",
+      "workflowName": "demo-workflow",
+      "status": "completed",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        },
+        "fetch-data": {
+          "statusCode": 200,
+          "data": {
+            "userId": 1,
+            "id": 1,
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+          }
+        },
+        "process-data": {
+          "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+          "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+        },
+        "check-result": {
+          "condition": true
+        },
+        "success-log": {
+          "logged": true
+        }
+      },
+      "error": null,
+      "idempotencyKey": "persist-test-1",
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:38:41.595Z",
+          "completedAt": "2026-01-31T11:38:41.595Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "fetch-data",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:38:41.909Z",
+          "completedAt": "2026-01-31T11:38:41.909Z",
+          "output": {
+            "statusCode": 200,
+            "data": {
+              "userId": 1,
+              "id": 1,
+              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+              "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+            }
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "process-data",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:38:41.909Z",
+          "completedAt": "2026-01-31T11:38:41.909Z",
+          "output": {
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "check-result",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:38:41.910Z",
+          "completedAt": "2026-01-31T11:38:41.910Z",
+          "output": {
+            "condition": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "success-log",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:38:41.910Z",
+          "completedAt": "2026-01-31T11:38:41.910Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T11:38:41.495Z",
+          "level": "info",
+          "message": "Execution queued for workflow: demo-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.595Z",
+          "level": "info",
+          "message": "▶️  Starting workflow: demo-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.595Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Workflow (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.595Z",
+          "level": "info",
+          "message": "🚀 Starting demo workflow",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.595Z",
+          "level": "info",
+          "message": "⚡ Executing step: Fetch Sample Data (http)",
+          "stepId": "fetch-data"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.909Z",
+          "level": "info",
+          "message": "⚡ Executing step: Process Data (transform)",
+          "stepId": "process-data"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.909Z",
+          "level": "info",
+          "message": "⚡ Executing step: Check Result (condition)",
+          "stepId": "check-result"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.910Z",
+          "level": "info",
+          "message": "⚡ Executing step: Log Success (log)",
+          "stepId": "success-log"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.910Z",
+          "level": "info",
+          "message": "✅ Workflow completed successfully!",
+          "stepId": "success-log"
+        },
+        {
+          "timestamp": "2026-01-31T11:38:41.910Z",
+          "level": "info",
+          "message": "🎉 Workflow completed successfully!"
+        }
+      ],
+      "createdAt": "2026-01-31T11:38:41.495Z",
+      "startedAt": "2026-01-31T11:38:41.594Z",
+      "completedAt": "2026-01-31T11:38:41.910Z"
+    },
+    {
+      "id": "exec-1769860174459-scjtfj",
+      "workflowId": "demo-wf-001",
+      "workflowName": "demo-workflow",
+      "status": "completed",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        },
+        "fetch-data": {
+          "statusCode": 200,
+          "data": {
+            "userId": 1,
+            "id": 1,
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+          }
+        },
+        "process-data": {
+          "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+          "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+        },
+        "check-result": {
+          "condition": true
+        },
+        "success-log": {
+          "logged": true
+        }
+      },
+      "error": null,
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:49:34.537Z",
+          "completedAt": "2026-01-31T11:49:34.537Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "fetch-data",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:49:34.711Z",
+          "completedAt": "2026-01-31T11:49:34.711Z",
+          "output": {
+            "statusCode": 200,
+            "data": {
+              "userId": 1,
+              "id": 1,
+              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+              "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+            }
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "process-data",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:49:34.712Z",
+          "completedAt": "2026-01-31T11:49:34.712Z",
+          "output": {
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "check-result",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:49:34.714Z",
+          "completedAt": "2026-01-31T11:49:34.714Z",
+          "output": {
+            "condition": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "success-log",
+          "status": "completed",
+          "startedAt": "2026-01-31T11:49:34.715Z",
+          "completedAt": "2026-01-31T11:49:34.715Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T11:49:34.459Z",
+          "level": "info",
+          "message": "Execution queued for workflow: demo-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.536Z",
+          "level": "info",
+          "message": "▶️  Starting workflow: demo-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.536Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Workflow (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.537Z",
+          "level": "info",
+          "message": "🚀 Starting demo workflow",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.537Z",
+          "level": "info",
+          "message": "⚡ Executing step: Fetch Sample Data (http)",
+          "stepId": "fetch-data"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.712Z",
+          "level": "info",
+          "message": "⚡ Executing step: Process Data (transform)",
+          "stepId": "process-data"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.713Z",
+          "level": "info",
+          "message": "⚡ Executing step: Check Result (condition)",
+          "stepId": "check-result"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.714Z",
+          "level": "info",
+          "message": "⚡ Executing step: Log Success (log)",
+          "stepId": "success-log"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.714Z",
+          "level": "info",
+          "message": "✅ Workflow completed successfully!",
+          "stepId": "success-log"
+        },
+        {
+          "timestamp": "2026-01-31T11:49:34.715Z",
+          "level": "info",
+          "message": "🎉 Workflow completed successfully!"
+        }
+      ],
+      "createdAt": "2026-01-31T11:49:34.459Z",
+      "startedAt": "2026-01-31T11:49:34.535Z",
+      "completedAt": "2026-01-31T11:49:34.715Z",
+      "retryCount": 0
+    }
+  ],
+  "idempotencyKeys": [
+    [
+      "persist-test-1",
+      "exec-1769859521495-94k72q"
+    ]
+  ]
+}

@@ -5,6 +5,8 @@
 
 import { demoStore } from './store.js';
 import { metrics, METRIC_NAMES } from './metrics.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface DLQEntry {
     id: string;
@@ -21,7 +23,47 @@ interface DLQEntry {
 }
 
 class DeadLetterQueue {
+    private persistencePath = path.resolve(process.cwd(), '.data/dlq.json');
     private entries: Map<string, DLQEntry> = new Map();
+
+    constructor() {
+        this.load();
+    }
+
+    private load() {
+        try {
+            if (fs.existsSync(this.persistencePath)) {
+                const fileContent = fs.readFileSync(this.persistencePath, 'utf-8');
+                const data = JSON.parse(fileContent);
+
+                if (Array.isArray(data)) {
+                    data.forEach((entry: any) => {
+                        this.entries.set(entry.id, {
+                            ...entry,
+                            failedAt: new Date(entry.failedAt)
+                        });
+                    });
+                    console.log(`📦 Loaded ${this.entries.size} DLQ entries from storage`);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load DLQ persistence:', error);
+        }
+    }
+
+    private save() {
+        try {
+            const dir = path.dirname(this.persistencePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            const data = Array.from(this.entries.values());
+            fs.writeFileSync(this.persistencePath, JSON.stringify(data, null, 2));
+        } catch (error) {
+            console.error('Failed to save DLQ persistence:', error);
+        }
+    }
 
     /**
      * Add a failed execution to the DLQ
@@ -51,6 +93,7 @@ class DeadLetterQueue {
         };
 
         this.entries.set(id, entry);
+        this.save();
 
         // Update metrics
         metrics.increment(METRIC_NAMES.DLQ_ENTRIES);
@@ -92,6 +135,7 @@ class DeadLetterQueue {
      */
     remove(id: string) {
         this.entries.delete(id);
+        this.save();
     }
 
     /**
@@ -101,6 +145,7 @@ class DeadLetterQueue {
         const entry = this.entries.get(id);
         if (entry) {
             entry.canRetry = false;
+            this.save();
         }
     }
 
