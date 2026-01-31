@@ -9,11 +9,11 @@ const metricsRouter: Router = Router();
  * GET /api/metrics
  * Returns all collected metrics
  */
-metricsRouter.get('/', (_req: Request, res: Response) => {
+metricsRouter.get('/', async (_req: Request, res: Response) => {
     const allMetrics = metrics.getAll();
 
     // Add computed metrics
-    const executions = demoStore.getAllExecutions();
+    const executions = await demoStore.getAllExecutions();
     const completed = executions.filter(e => e.status === 'completed').length;
     const failed = executions.filter(e => e.status === 'failed').length;
     const pending = executions.filter(e => e.status === 'pending').length;

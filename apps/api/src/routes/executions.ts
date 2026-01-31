@@ -12,7 +12,7 @@ executionsRouter.get('/', async (req: Request, res: Response) => {
     const since = req.query.since as string | undefined;
     const limitStr = req.query.limit as string | undefined;
 
-    let executions = demoStore.getAllExecutions();
+    let executions = await demoStore.getAllExecutions();
 
     if (status) {
       executions = executions.filter(e => e.status === status);
@@ -66,7 +66,7 @@ executionsRouter.get('/', async (req: Request, res: Response) => {
 executionsRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const execution = demoStore.getExecution(id || '');
+    const execution = await demoStore.getExecution(id || '');
 
     if (!execution) {
       return res.status(404).json({ error: 'Execution not found' });
@@ -141,7 +141,7 @@ executionsRouter.get('/:id', async (req: Request, res: Response) => {
 executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const execution = demoStore.getExecution(id || '');
+    const execution = await demoStore.getExecution(id || '');
 
     if (!execution) {
       return res.status(404).json({ error: 'Execution not found' });
@@ -151,13 +151,13 @@ executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Cannot cancel finished execution' });
     }
 
-    demoStore.updateExecution(id || '', {
+    await demoStore.updateExecution(id || '', {
       status: 'cancelled',
       completedAt: new Date(),
       error: 'Cancelled by user',
     });
 
-    demoStore.addExecutionLog(id || '', {
+    await demoStore.addExecutionLog(id || '', {
       timestamp: new Date(),
       level: 'warn',
       message: 'Cancellation requested via API',
@@ -179,7 +179,7 @@ executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
 executionsRouter.get('/:id/logs', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const execution = demoStore.getExecution(id || '');
+    const execution = await demoStore.getExecution(id || '');
 
     if (!execution) {
       return res.status(404).json({ error: 'Execution not found' });
@@ -194,8 +194,8 @@ executionsRouter.get('/:id/logs', async (req: Request, res: Response) => {
 
 executionsRouter.get('/failed', async (_req: Request, res: Response) => {
   try {
-    const failedExecutions = demoStore
-      .getAllExecutions()
+    const allExecutions = await demoStore.getAllExecutions();
+    const failedExecutions = allExecutions
       .filter(e => e.status === 'failed')
       .map(e => ({
         id: e.id,

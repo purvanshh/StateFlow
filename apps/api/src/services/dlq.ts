@@ -68,8 +68,8 @@ class DeadLetterQueue {
     }
   }
 
-  add(executionId: string, reason: string) {
-    const execution = demoStore.getExecution(executionId);
+  async add(executionId: string, reason: string) {
+    const execution = await demoStore.getExecution(executionId);
     if (!execution) return;
 
     const id = `dlq-${Date.now()}-${Math.random().toString(36).substring(7)}`;

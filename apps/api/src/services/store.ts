@@ -1,18 +1,8 @@
-/**
- * Store Facade (Shim)
- * Keeps backward compatibility while using the new modular storage architecture
- */
+import { SqlExecutionStore } from './storage/sql-store.js';
+// import { FileStore } from './storage/file-store.js';
 
-import { FileStore } from './storage/file-store.js';
+// Phase 5: Switched to SQL Store
+export const demoStore = new SqlExecutionStore();
 
-// Re-export definitions (DEMO_WORKFLOW, TIMEOUT_WORKFLOW)
-export * from './storage/definitions.js';
-
-// Re-export types if needed
-export * from './storage/types.js';
-
-import { ExecutionStore } from './storage/types.js';
-
-// Export singleton instance of the store
-// This replaces the old 'export const demoStore = new DemoStore()'
-export const demoStore: ExecutionStore = new FileStore();
+// load() is no-op for SQL store but safe to call
+demoStore.load();

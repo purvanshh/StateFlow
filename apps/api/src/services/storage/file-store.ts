@@ -120,7 +120,7 @@ export class FileStore implements ExecutionStore {
 
     private lockPath = path.resolve(process.cwd(), '.data/store.lock');
 
-    findByIdempotencyKey(key: string): Execution | undefined {
+    async findByIdempotencyKey(key: string): Promise<Execution | undefined> {
         const executionId = this.idempotencyKeys.get(key);
         if (executionId) {
             return this.executions.get(executionId);
@@ -128,11 +128,11 @@ export class FileStore implements ExecutionStore {
         return undefined;
     }
 
-    getExecution(id: string): Execution | undefined {
+    async getExecution(id: string): Promise<Execution | undefined> {
         return this.executions.get(id);
     }
 
-    getAllExecutions(): Execution[] {
+    async getAllExecutions(): Promise<Execution[]> {
         return Array.from(this.executions.values()).sort(
             (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
         );
@@ -141,11 +141,11 @@ export class FileStore implements ExecutionStore {
     // (Locking logic moved to individual methods)
 
 
-    createExecution(
+    async createExecution(
         workflowId: string,
         input: Record<string, unknown>,
         idempotencyKey?: string
-    ): Execution {
+    ): Promise<Execution> {
         // We can't easily make this async without changing the interface to Promise<Execution>
         // But for now, let's use a sync version logic or just assume create is safe enough?
         // Actually, create IS NOT safe if we have duplicate IDs or idempotency checks.
@@ -238,7 +238,7 @@ export class FileStore implements ExecutionStore {
         }
     }
 
-    claimExecutions(workerId: string, limit: number): Execution[] {
+    async claimExecutions(workerId: string, limit: number): Promise<Execution[]> {
         // Sync lock
         const start = Date.now();
         while (true) {
@@ -303,7 +303,7 @@ export class FileStore implements ExecutionStore {
         }
     }
 
-    updateExecution(id: string, updates: Partial<Execution>) {
+    async updateExecution(id: string, updates: Partial<Execution>): Promise<void> {
         // Sync lock implementation
         const start = Date.now();
         while (true) {
@@ -337,7 +337,7 @@ export class FileStore implements ExecutionStore {
     }
 
 
-    addExecutionLog(id: string, log: ExecutionLog) {
+    async addExecutionLog(id: string, log: ExecutionLog): Promise<void> {
         // Sync lock implementation
         const start = Date.now();
         while (true) {
@@ -375,7 +375,7 @@ export class FileStore implements ExecutionStore {
         }
     }
 
-    addStepResult(id: string, stepResult: StepResultRecord) {
+    async addStepResult(id: string, stepResult: StepResultRecord): Promise<void> {
         // Sync lock implementation
         const start = Date.now();
         while (true) {

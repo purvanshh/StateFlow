@@ -47,7 +47,7 @@ async function executeStep(step: WorkflowStep, context: ExecutionContext): Promi
   // 1. Failure Injection
   const failureRate = (step.config as any)?.failureRate as number | undefined;
   if (failureRate !== undefined && Math.random() < failureRate) {
-    demoStore.addExecutionLog(context.executionId, {
+    await demoStore.addExecutionLog(context.executionId, {
       timestamp: new Date(),
       level: 'warn',
       message: `💥 Simulated failure (rate: ${failureRate}) in step: ${step.name || step.id}`,
@@ -66,7 +66,7 @@ async function executeStep(step: WorkflowStep, context: ExecutionContext): Promi
       switch (step.type) {
         case 'log': {
           const config = step.config as { message: string; level?: string };
-          demoStore.addExecutionLog(context.executionId, {
+          await demoStore.addExecutionLog(context.executionId, {
             timestamp: new Date(),
             level: (config.level as 'info' | 'warn' | 'error') || 'info',
             message: config.message,
@@ -215,7 +215,7 @@ async function executeStep(step: WorkflowStep, context: ExecutionContext): Promi
  * Run workflow execution (Restart-Safe & Interruptible)
  */
 export async function runWorkflowExecution(executionId: string): Promise<void> {
-  const execution = demoStore.getExecution(executionId);
+  const execution = await demoStore.getExecution(executionId);
   if (!execution) {
     logger.error(`Execution not found: ${executionId}`);
     return;
@@ -224,7 +224,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
   const workflow = demoStore.getWorkflowById(execution.workflowId);
   if (!workflow) {
     logger.error(`Workflow not found: ${execution.workflowId}`);
-    demoStore.updateExecution(executionId, {
+    await demoStore.updateExecution(executionId, {
       status: 'failed',
       error: 'Workflow not found',
       completedAt: new Date(),
@@ -241,14 +241,14 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
 
   // Update status to running if not already
   if (execution.status !== 'running') {
-    demoStore.updateExecution(executionId, {
+    await demoStore.updateExecution(executionId, {
       status: 'running',
       startedAt: execution.startedAt || new Date(),
     });
 
     // Log resume if applicable
     if (execution.status === 'retry_scheduled') {
-      demoStore.addExecutionLog(executionId, {
+      await demoStore.addExecutionLog(executionId, {
         timestamp: new Date(),
         level: 'info',
         message: `🔄 Resuming retry for step: ${currentStepId}`,
@@ -257,7 +257,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
       // Only increment total metric on fresh start
       if (execution.steps.length === 0) {
         metrics.increment(METRIC_NAMES.EXECUTIONS_TOTAL);
-        demoStore.addExecutionLog(executionId, {
+        await demoStore.addExecutionLog(executionId, {
           timestamp: new Date(),
           level: 'info',
           message: `▶️  Starting workflow: ${workflow.name}`,
@@ -282,7 +282,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
     while (currentStepId) {
       // RELOAD STATE (Crucial for multi-process cancellation awareness)
       demoStore.load();
-      const currentExecutionState = demoStore.getExecution(executionId);
+      const currentExecutionState = await demoStore.getExecution(executionId);
 
       if (!currentExecutionState) {
         logger.error(`Execution missing during run: ${executionId}`);
@@ -291,7 +291,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
 
       // Check for CANCELLATION
       if (currentExecutionState.status === 'cancelled') {
-        demoStore.addExecutionLog(executionId, {
+        await demoStore.addExecutionLog(executionId, {
           timestamp: new Date(),
           level: 'warn',
           message: '🛑 Execution cancelled by user request',
@@ -303,9 +303,9 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
       if (!step) throw new Error(`Step not found: ${currentStepId}`);
 
       // Update current step in store for crash recovery
-      demoStore.updateExecution(executionId, { currentStepId });
+      await demoStore.updateExecution(executionId, { currentStepId });
 
-      demoStore.addExecutionLog(executionId, {
+      await demoStore.addExecutionLog(executionId, {
         timestamp: new Date(),
         level: 'info',
         message: `⚡ Executing step: ${step.name || step.id} (${step.type})`,
@@ -322,9 +322,9 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
 
       // Double-check cancellation after long-running step
       demoStore.load();
-      const freshState = demoStore.getExecution(executionId);
+      const freshState = await demoStore.getExecution(executionId);
       if (freshState?.status === 'cancelled') {
-        demoStore.addExecutionLog(executionId, {
+        await demoStore.addExecutionLog(executionId, {
           timestamp: new Date(),
           level: 'warn',
           message: '🛑 Execution cancelled during step execution',
@@ -335,12 +335,12 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
       if (result.status === 'completed') {
         // Success!
         // Reset retry count for this step
-        demoStore.updateExecution(executionId, {
+        await demoStore.updateExecution(executionId, {
           retryCount: 0,
           nextRetryAt: undefined,
         });
 
-        demoStore.addStepResult(executionId, {
+        await demoStore.addStepResult(executionId, {
           stepId: step.id,
           status: 'completed',
           startedAt: new Date(), // Approximate
@@ -353,7 +353,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
         if (result.output) {
           context.state[step.id] = result.output;
           // Persist state incrementally
-          demoStore.updateExecution(executionId, { output: context.state });
+          await demoStore.updateExecution(executionId, { output: context.state });
         }
 
         if (result.duration) metrics.observe(METRIC_NAMES.STEP_DURATION_MS, result.duration);
@@ -365,7 +365,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
         const maxAttempts = step.retryPolicy?.maxAttempts || 3; // Default 3
 
         // Record failed result
-        demoStore.addStepResult(executionId, {
+        await demoStore.addStepResult(executionId, {
           stepId: step.id,
           status: 'failed',
           startedAt: new Date(),
@@ -389,7 +389,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
           const delay = calculateNextDelay(attempts, baseDelay);
           const nextRetryAt = new Date(Date.now() + delay);
 
-          demoStore.updateExecution(executionId, {
+          await demoStore.updateExecution(executionId, {
             status: 'retry_scheduled',
             retryCount: attempts,
             nextRetryAt: nextRetryAt,
@@ -397,7 +397,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
             currentStepId: step.id, // Stay on this step
           });
 
-          demoStore.addExecutionLog(executionId, {
+          await demoStore.addExecutionLog(executionId, {
             timestamp: new Date(),
             level: 'warn',
             message: `⚠️ Step failed. Retrying (${attempts + 1}/${maxAttempts}) in ${delay}ms...`,
@@ -426,14 +426,16 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
       Math.max(0, (metrics.getGauge(METRIC_NAMES.ACTIVE_EXECUTIONS) || 1) - 1)
     );
 
-    demoStore.updateExecution(executionId, {
+    demoStore.load(); // No await needed for no-op
+
+    await demoStore.updateExecution(executionId, {
       status: 'completed',
       output: context.state,
       completedAt: new Date(),
       currentStepId: undefined, // Clear step
     });
 
-    demoStore.addExecutionLog(executionId, {
+    await demoStore.addExecutionLog(executionId, {
       timestamp: new Date(),
       level: 'info',
       message: '🎉 Workflow completed successfully!',
@@ -450,14 +452,14 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
       Math.max(0, (metrics.getGauge(METRIC_NAMES.ACTIVE_EXECUTIONS) || 1) - 1)
     );
 
-    demoStore.updateExecution(executionId, {
+    await demoStore.updateExecution(executionId, {
       status: 'failed',
       error: err.message,
       output: context.state,
       completedAt: new Date(),
     });
 
-    demoStore.addExecutionLog(executionId, {
+    await demoStore.addExecutionLog(executionId, {
       timestamp: new Date(),
       level: 'error',
       message: `💀 Workflow failed: ${err.message}`,

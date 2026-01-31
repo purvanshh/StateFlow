@@ -56,19 +56,19 @@ export interface ExecutionStore {
     getAllWorkflows(): WorkflowDefinition[];
 
     // Executions
-    createExecution(workflowId: string, input: Record<string, unknown>, idempotencyKey?: string): Execution;
-    getExecution(id: string): Execution | undefined;
-    updateExecution(id: string, updates: Partial<Execution>): void;
+    createExecution(workflowId: string, input: Record<string, unknown>, idempotencyKey?: string): Promise<Execution>;
+    getExecution(id: string): Promise<Execution | undefined>;
+    updateExecution(id: string, updates: Partial<Execution>): Promise<void>;
 
     // Querying
-    getAllExecutions(): Execution[];
-    claimExecutions(workerId: string, limit: number): Execution[];
-    findByIdempotencyKey(key: string): Execution | undefined;
+    getAllExecutions(): Promise<Execution[]>;
+    claimExecutions(workerId: string, limit: number): Promise<Execution[]>;
+    findByIdempotencyKey(key: string): Promise<Execution | undefined>;
 
     // Logging/Updates
-    addExecutionLog(id: string, log: ExecutionLog): void;
-    addStepResult(id: string, result: StepResultRecord): void;
+    addExecutionLog(id: string, log: ExecutionLog): Promise<void>;
+    addStepResult(id: string, result: StepResultRecord): Promise<void>;
 
     // Utility
-    load(): void; // For multi-process sync
+    load(): void; // synchronous load is fine for FileStore, no-op for SQL
 }

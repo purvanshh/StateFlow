@@ -27,7 +27,7 @@ class InlineWorker {
       try {
         const availableSlots = 3 - this.activeExecutions.size;
         if (availableSlots > 0) {
-          const pending = demoStore.claimExecutions(this.workerId, availableSlots);
+          const pending = await demoStore.claimExecutions(this.workerId, availableSlots);
 
           for (const execution of pending) {
             if (this.activeExecutions.has(execution.id)) continue;
@@ -39,8 +39,8 @@ class InlineWorker {
             });
 
             runWorkflowExecution(execution.id)
-              .then(() => {
-                const e = demoStore.getExecution(execution.id);
+              .then(async () => {
+                const e = await demoStore.getExecution(execution.id);
                 const status = e?.status || 'unknown';
                 logger.info(`Execution finished`, {
                   executionId: execution.id,

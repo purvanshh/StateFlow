@@ -5,8 +5,8 @@ import { dlq } from '../services/dlq.js';
 
 const healthRouter: Router = Router();
 
-healthRouter.get('/', (_req: Request, res: Response) => {
-  const allExecutions = demoStore.getAllExecutions();
+healthRouter.get('/', async (_req: Request, res: Response) => {
+  const allExecutions = await demoStore.getAllExecutions();
   const now = new Date();
 
   const running = allExecutions.filter(e => e.status === 'running').length;
@@ -44,8 +44,8 @@ healthRouter.get('/', (_req: Request, res: Response) => {
   });
 });
 
-healthRouter.get('/ready', (_req: Request, res: Response) => {
-  const allExecutions = demoStore.getAllExecutions();
+healthRouter.get('/ready', async (_req: Request, res: Response) => {
+  const allExecutions = await demoStore.getAllExecutions();
   const now = new Date();
   const hasPendingWork = allExecutions.some(
     e =>

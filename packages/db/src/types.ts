@@ -30,34 +30,58 @@ export interface Database {
                 Row: {
                     id: string;
                     workflow_id: string;
+                    workflow_name: string;
                     status: ExecutionStatus;
                     input: Json;
                     output: Json | null;
                     error: string | null;
-                    current_step: string | null;
+
+                    current_step_id: string | null;
+                    retry_count: number;
+                    next_retry_at: string | null;
+
+                    worker_id: string | null;
+                    locked_at: string | null;
+                    idempotency_key: string | null;
+
                     started_at: string | null;
                     completed_at: string | null;
                     created_at: string;
+                    updated_at: string;
                 };
                 Insert: Omit<Database['public']['Tables']['executions']['Row'], 'id' | 'created_at'>;
                 Update: Partial<Database['public']['Tables']['executions']['Insert']>;
             };
-            execution_steps: {
+            step_results: {
                 Row: {
                     id: string;
                     execution_id: string;
                     step_id: string;
-                    status: StepStatus;
+                    status: string;
                     input: Json;
                     output: Json | null;
                     error: string | null;
                     attempt: number;
+                    duration_ms: number | null;
                     started_at: string | null;
                     completed_at: string | null;
                     created_at: string;
                 };
-                Insert: Omit<Database['public']['Tables']['execution_steps']['Row'], 'id' | 'created_at'>;
-                Update: Partial<Database['public']['Tables']['execution_steps']['Insert']>;
+                Insert: Omit<Database['public']['Tables']['step_results']['Row'], 'id' | 'created_at'>;
+                Update: Partial<Database['public']['Tables']['step_results']['Insert']>;
+            };
+            dlq_entries: {
+                Row: {
+                    id: string;
+                    execution_id: string;
+                    workflow_name: string | null;
+                    reason: string | null;
+                    payload: Json | null;
+                    failed_at: string;
+                    created_at: string;
+                };
+                Insert: Omit<Database['public']['Tables']['dlq_entries']['Row'], 'id' | 'created_at' | 'failed_at'>;
+                Update: Partial<Database['public']['Tables']['dlq_entries']['Insert']>;
             };
             execution_logs: {
                 Row: {

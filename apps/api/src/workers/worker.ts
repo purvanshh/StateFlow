@@ -60,7 +60,7 @@ class WorkflowWorker {
 
                 if (availableSlots > 0) {
                     // Claim pending and scheduled executions
-                    const pending = demoStore.claimExecutions(this.workerId, availableSlots);
+                    const pending = await demoStore.claimExecutions(this.workerId, availableSlots);
 
                     for (const execution of pending) {
                         // Skip if already processing
@@ -94,7 +94,7 @@ class WorkflowWorker {
         try {
             await runWorkflowExecution(executionId);
 
-            const execution = demoStore.getExecution(executionId);
+            const execution = await demoStore.getExecution(executionId);
             const duration = Date.now() - startTime;
 
             if (execution?.status === 'completed') {

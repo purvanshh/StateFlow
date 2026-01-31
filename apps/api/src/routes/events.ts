@@ -44,7 +44,7 @@ eventsRouter.post('/', async (req: Request, res: Response) => {
 
     // Check idempotency key for duplicates
     if (idempotencyKey) {
-      const existing = demoStore.findByIdempotencyKey(idempotencyKey);
+      const existing = await demoStore.findByIdempotencyKey(idempotencyKey);
       if (existing) {
         logger.info(`Idempotency hit - returning existing execution`, {
           executionId: existing.id,
@@ -65,7 +65,7 @@ eventsRouter.post('/', async (req: Request, res: Response) => {
       }
     }
 
-    const execution = demoStore.createExecution(workflow.id, input, idempotencyKey);
+    const execution = await demoStore.createExecution(workflow.id, input, idempotencyKey);
 
     logger.info(`Event received - triggering workflow`, {
       executionId: execution.id,
@@ -73,7 +73,7 @@ eventsRouter.post('/', async (req: Request, res: Response) => {
     });
 
     // Add initial log
-    demoStore.addExecutionLog(execution.id, {
+    await demoStore.addExecutionLog(execution.id, {
       timestamp: new Date(),
       level: 'info',
       message: `Execution queued for workflow: ${workflowName}`,
