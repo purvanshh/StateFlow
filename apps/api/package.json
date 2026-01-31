@@ -11,7 +11,9 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "stateflow": "tsx src/cli.ts"
+    "stateflow": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "bin": {
     "stateflow": "src/cli.ts"
@@ -32,6 +34,7 @@
     "@types/cors": "^2.8.17",
     "@types/morgan": "^1.9.9",
     "typescript": "^5.3.0",
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "vitest": "^1.0.0"
   }
 }

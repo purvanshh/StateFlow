@@ -33,12 +33,12 @@ eventsRouter.post('/', async (req: Request, res: Response) => {
     const { workflowName, input, idempotencyKey } = parsed.data;
 
     // Find workflow by name
-    const workflow = demoStore.getWorkflowByName(workflowName);
+    const workflow = await demoStore.getWorkflowByName(workflowName);
 
     if (!workflow) {
       return res.status(404).json({
         error: `Workflow not found: ${workflowName}`,
-        availableWorkflows: demoStore.getAllWorkflows().map(w => w.name),
+        availableWorkflows: (await demoStore.getAllWorkflows()).map(w => w.name),
       });
     }
 
@@ -100,8 +100,8 @@ eventsRouter.post('/', async (req: Request, res: Response) => {
  * GET /api/events/workflows
  * List available workflows that can be triggered
  */
-eventsRouter.get('/workflows', (_req: Request, res: Response) => {
-  const workflows = demoStore.getAllWorkflows().map(w => ({
+eventsRouter.get('/workflows', async (_req: Request, res: Response) => {
+  const workflows = (await demoStore.getAllWorkflows()).map(w => ({
     name: w.name,
     description: w.description,
     status: w.status,

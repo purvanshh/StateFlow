@@ -26,10 +26,29 @@ const createWorkflowSchema = z.object({
 // GET /api/workflows - List all workflows
 workflowsRouter.get('/', async (_req: Request, res: Response) => {
     try {
-        // TODO: Replace with actual database query
-        const workflows = [
-            { id: '1', name: 'Sample Workflow', status: 'active', createdAt: new Date() },
-        ];
+        const { db } = await import('@stateflow/db');
+
+        // Get latest version of each workflow
+        // Valid query for Supabase/Postgres to get latest group by name
+        // Or just fetch all and dedup in memory for MVP
+
+        const { data, error } = await db()
+            .from('workflows')
+            .select('*')
+            .order('name', { ascending: true })
+            .order('version', { ascending: false });
+
+        if (error) throw error;
+
+        // Deduplicate to show only latest version
+        const latest = new Map();
+        for (const w of data || []) {
+            if (!latest.has(w.name)) {
+                latest.set(w.name, w);
+            }
+        }
+
+        const workflows = Array.from(latest.values());
         res.json({ data: workflows, total: workflows.length });
     } catch (error) {
         logger.error('Failed to fetch workflows', { error: error as Error });
@@ -41,8 +60,18 @@ workflowsRouter.get('/', async (_req: Request, res: Response) => {
 workflowsRouter.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        // TODO: Replace with actual database query
-        const workflow = { id, name: 'Sample Workflow', steps: [], status: 'active' };
+        const { db } = await import('@stateflow/db');
+
+        const { data: workflow, error } = await db()
+            .from('workflows')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !workflow) {
+            return res.status(404).json({ error: 'Workflow not found' });
+        }
+
         res.json({ data: workflow });
     } catch (error) {
         logger.error('Failed to fetch workflow', { error: error as Error });
@@ -58,8 +87,56 @@ workflowsRouter.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Validation failed', details: parsed.error.issues });
         }
 
-        // TODO: Save to database
-        const workflow = { id: crypto.randomUUID(), ...parsed.data, createdAt: new Date() };
+        // Logic:
+        // 1. Check if workflow with name exists to determine next version
+        // 2. Insert new version
+
+        // We need direct DB access or expand Store interface?
+        // Let's use the Store interface. We need to cast it to something that supports management
+        // or just use direct DB client here if store is only for execution?
+        // The instructions say "Implement API to POST /workflows".
+        // SqlExecutionStore has getWorkflowByName.
+
+        // However, we need to WRITE. Store interface currently only has createExecution and logs.
+        // We should probably add `createWorkflow` to the Store interface or use the repository pattern if available.
+        // Looking at packages/db, there is `WorkflowRepository`.
+        // But for now, let's implement usage of `db` client directly here as seen in `sql-store.ts` 
+        // OR better, instantiate a service/repository.
+
+        // Let's check if we can import `db` from `@stateflow/db` directly here.
+        // Yes, imports are available.
+
+        // Note: We need to import `db` at top level.
+        // For now, let's rewrite the imports to include `db`. 
+        // Waiting for next tool call to fix imports.
+
+        // Using `db` directly for now as this is the API layer.
+        const { db } = await import('@stateflow/db');
+        const client = db();
+
+        // Check latest version
+        const { data: existing } = await client
+            .from('workflows')
+            .select('version')
+            .eq('name', parsed.data.name)
+            .order('version', { ascending: false })
+            .limit(1)
+            .single();
+
+        const nextVersion = existing ? existing.version + 1 : 1;
+
+        const { data: workflow, error } = await client
+            .from('workflows')
+            .insert({
+                name: parsed.data.name,
+                version: nextVersion,
+                definition: parsed.data, // content includes steps, etc.
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
         res.status(201).json({ data: workflow });
     } catch (error) {
         logger.error('Failed to create workflow', { error: error as Error });
@@ -100,17 +177,14 @@ workflowsRouter.delete('/:id', async (req: Request, res: Response) => {
 // POST /api/workflows/:id/execute - Execute workflow
 workflowsRouter.post('/:id/execute', async (req: Request, res: Response) => {
     try {
+        const { demoStore } = await import('../services/store.js');
         const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ error: 'Missing workflow ID' });
+        }
         const input = req.body.input || {};
 
-        // TODO: Queue workflow execution
-        const execution = {
-            id: crypto.randomUUID(),
-            workflowId: id,
-            status: 'pending',
-            input,
-            createdAt: new Date(),
-        };
+        const execution = await demoStore.createExecution(id, input);
 
         res.status(202).json({ data: execution });
     } catch (error) {

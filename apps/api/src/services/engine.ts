@@ -221,7 +221,23 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
     return;
   }
 
-  const workflow = demoStore.getWorkflowById(execution.workflowId);
+  let workflow: import('./storage/types.js').WorkflowDefinition | undefined;
+
+  if (execution.workflowVersion !== undefined) {
+    workflow = await demoStore.getWorkflowByName(execution.workflowName, execution.workflowVersion);
+    if (workflow) {
+      logger.info(`Loaded workflow version ${execution.workflowVersion} for execution`, {
+        executionId,
+        workflowName: execution.workflowName,
+        workflowVersion: execution.workflowVersion,
+      });
+    }
+  }
+
+  if (!workflow) {
+    workflow = await demoStore.getWorkflowById(execution.workflowId);
+  }
+
   if (!workflow) {
     logger.error(`Workflow not found: ${execution.workflowId}`);
     await demoStore.updateExecution(executionId, {
