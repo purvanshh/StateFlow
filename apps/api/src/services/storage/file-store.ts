@@ -85,7 +85,9 @@ export class FileStore implements ExecutionStore {
             name: DEMO_WORKFLOW.name,
             description: DEMO_WORKFLOW.description,
             definition: DEMO_WORKFLOW.definition,
+            steps: [], // Should extract steps from definition if checking
             status: DEMO_WORKFLOW.status,
+            version: 1,
             createdAt: new Date(),
         });
 
@@ -95,7 +97,9 @@ export class FileStore implements ExecutionStore {
             name: TIMEOUT_WORKFLOW.name,
             description: TIMEOUT_WORKFLOW.description,
             definition: TIMEOUT_WORKFLOW.definition as any,
+            steps: [],
             status: TIMEOUT_WORKFLOW.status,
+            version: 1,
             createdAt: new Date(),
         });
 
@@ -103,18 +107,18 @@ export class FileStore implements ExecutionStore {
         logger.info('📦 Seeded demo & timeout workflows');
     }
 
-    getWorkflowByName(name: string): WorkflowDefinition | undefined {
+    async getWorkflowByName(name: string): Promise<WorkflowDefinition | undefined> {
         for (const wf of this.workflows.values()) {
             if (wf.name === name) return wf;
         }
         return undefined;
     }
 
-    getWorkflowById(id: string): WorkflowDefinition | undefined {
+    async getWorkflowById(id: string): Promise<WorkflowDefinition | undefined> {
         return this.workflows.get(id);
     }
 
-    getAllWorkflows(): WorkflowDefinition[] {
+    async getAllWorkflows(): Promise<WorkflowDefinition[]> {
         return Array.from(this.workflows.values());
     }
 

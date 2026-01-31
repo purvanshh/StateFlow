@@ -5,8 +5,10 @@ export interface WorkflowDefinition {
     name: string;
     description: string;
     definition: typeof DEMO_WORKFLOW.definition | typeof TIMEOUT_WORKFLOW.definition;
-    status: string;
+    steps: unknown[]; // Keeping loose for now, will tighten with Zod
+    version: number;
     createdAt: Date;
+    [key: string]: unknown;
 }
 
 export type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'retry_scheduled' | 'cancelled';
@@ -15,6 +17,7 @@ export interface Execution {
     id: string;
     workflowId: string;
     workflowName: string;
+    workflowVersion?: number; // Phase 6: Versioning
     status: ExecutionStatus;
     input: Record<string, unknown>;
     output: Record<string, unknown> | null;
@@ -50,10 +53,10 @@ export interface ExecutionLog {
 }
 
 export interface ExecutionStore {
-    // Workflows
-    getWorkflowById(id: string): WorkflowDefinition | undefined;
-    getWorkflowByName(name: string): WorkflowDefinition | undefined;
-    getAllWorkflows(): WorkflowDefinition[];
+    // Workflows - Phase 6: Sync -> Async for DB access
+    getWorkflowById(id: string): Promise<WorkflowDefinition | undefined>;
+    getWorkflowByName(name: string, version?: number): Promise<WorkflowDefinition | undefined>;
+    getAllWorkflows(): Promise<WorkflowDefinition[]>;
 
     // Executions
     createExecution(workflowId: string, input: Record<string, unknown>, idempotencyKey?: string): Promise<Execution>;

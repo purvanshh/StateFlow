@@ -27,30 +27,9 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['workflows']['Insert']>;
             };
             executions: {
-                Row: {
-                    id: string;
-                    workflow_id: string;
-                    workflow_name: string;
-                    status: ExecutionStatus;
-                    input: Json;
-                    output: Json | null;
-                    error: string | null;
-
-                    current_step_id: string | null;
-                    retry_count: number;
-                    next_retry_at: string | null;
-
-                    worker_id: string | null;
-                    locked_at: string | null;
-                    idempotency_key: string | null;
-
-                    started_at: string | null;
-                    completed_at: string | null;
-                    created_at: string;
-                    updated_at: string;
-                };
-                Insert: Omit<Database['public']['Tables']['executions']['Row'], 'id' | 'created_at'>;
-                Update: Partial<Database['public']['Tables']['executions']['Insert']>;
+                Row: ExecutionRow;
+                Insert: Omit<ExecutionRow, 'id' | 'created_at'>;
+                Update: Partial<Omit<ExecutionRow, 'id' | 'created_at'>>;
             };
             step_results: {
                 Row: {
@@ -124,3 +103,31 @@ export interface WorkflowStep {
 
 export type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type StepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export interface ExecutionRow {
+    id: string;
+    workflow_id: string;
+    workflow_name: string;
+    workflow_version?: number;
+    status: ExecutionStatus;
+    input: Json;
+    output: Json | null;
+    error: string | null;
+    current_step_id: string | null;
+    retry_count: number;
+    next_retry_at: string | null;
+    worker_id: string | null;
+    locked_at: string | null;
+    idempotency_key: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WorkflowRow {
+    id: string;
+    name: string;
+    version: number;
+    definition: Json;
+    created_at: string;
+}

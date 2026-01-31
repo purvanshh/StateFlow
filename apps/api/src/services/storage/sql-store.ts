@@ -1,42 +1,106 @@
 import { ExecutionStore, Execution, WorkflowDefinition, ExecutionLog, StepResultRecord } from './types.js';
 import { db } from '@stateflow/db';
 import { logger } from '@stateflow/shared';
-import { DEMO_WORKFLOW, TIMEOUT_WORKFLOW } from './definitions.js';
 
 export class SqlExecutionStore implements ExecutionStore {
     private client = db(); // Use service client for backend
 
-    // Workflows - Still hardcoded for now, but could be DB-backed later
-    getWorkflowById(id: string): WorkflowDefinition | undefined {
-        // In Phase 5, workflows are still definitions in code, but we track executions in DB
-        if (id === 'demo-workflow') return { id: 'demo-workflow', ...DEMO_WORKFLOW, createdAt: new Date() };
-        if (id === 'timeout-workflow') return { id: 'timeout-workflow', ...TIMEOUT_WORKFLOW, createdAt: new Date() };
-        return undefined;
+    // Workflows - Phase 6: DB-backed
+    async getWorkflowById(id: string): Promise<WorkflowDefinition | undefined> {
+        const { data } = await this.client
+            .from('workflows')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (!data) return undefined;
+        // Cast definition to WorkflowDefinition (assumed valid via Zod later)
+        return {
+            ...(data.definition as any),
+            id: data.id,
+            name: data.name,
+            version: data.version,
+        };
     }
 
-    getWorkflowByName(name: string): WorkflowDefinition | undefined {
-        if (name === 'demo-workflow') return { id: 'demo-workflow', ...DEMO_WORKFLOW, createdAt: new Date() };
-        if (name === 'timeout-workflow') return { id: 'timeout-workflow', ...TIMEOUT_WORKFLOW, createdAt: new Date() };
-        return undefined;
+    async getWorkflowByName(name: string, version?: number): Promise<WorkflowDefinition | undefined> {
+        let query = this.client
+            .from('workflows')
+            .select('*')
+            .eq('name', name);
+
+        if (version) {
+            query = query.eq('version', version);
+        } else {
+            // Get latest version
+            query = query.order('version', { ascending: false }).limit(1);
+        }
+
+        const { data } = await query.single();
+
+        if (!data) return undefined;
+
+        return {
+            ...(data.definition as any),
+            id: data.id,
+            name: data.name,
+            version: data.version,
+        };
     }
 
-    getAllWorkflows(): WorkflowDefinition[] {
-        return [
-            { id: 'demo-workflow', ...DEMO_WORKFLOW, createdAt: new Date() },
-            { id: 'timeout-workflow', ...TIMEOUT_WORKFLOW, createdAt: new Date() },
-        ];
+    async getAllWorkflows(): Promise<WorkflowDefinition[]> {
+        // Get latest version of each workflow
+        // Distinct on name, order by version desc
+        const { data } = await this.client
+            .from('workflows')
+            .select('*')
+            .order('name', { ascending: true })
+            .order('version', { ascending: false });
+
+        if (!data) return [];
+
+        // simplistic latest dedupe in memory for now
+        const latest = new Map<string, any>();
+        for (const w of data) {
+            if (!latest.has(w.name)) latest.set(w.name, w);
+        }
+
+        return Array.from(latest.values()).map(w => ({
+            ...(w.definition as any),
+            id: w.id,
+            name: w.name,
+            version: w.version,
+        }));
     }
 
     // Executions
     async createExecution(workflowId: string, input: Record<string, unknown>, idempotencyKey?: string): Promise<Execution> {
-        const workflow = this.getWorkflowById(workflowId);
+        // workflowId might be a UUID (workflow table id) or a name?
+        // Let's assume for now the API passes the 'name' and we find the latest version,
+        // OR it passes the specific UUID of the workflow definition.
+
+        // If UUID, we fetch that specific one.
+        // If name, we fetch latest.
+        // For safety, let's treat workflowId as the UUID from workflows table.
+        // If it's not a UUID, we assume it's a name (legacy) and fetch latest.
+
+        let workflow: WorkflowDefinition | undefined;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workflowId);
+
+        if (isUuid) {
+            workflow = await this.getWorkflowById(workflowId);
+        } else {
+            workflow = await this.getWorkflowByName(workflowId);
+        }
+
         if (!workflow) throw new Error(`Workflow ${workflowId} not found`);
 
         const { data, error } = await this.client
             .from('executions')
             .insert({
-                workflow_id: workflowId,
+                workflow_id: workflow.id, // The UUID of the specific version
                 workflow_name: workflow.name,
+                workflow_version: workflow.version, // Track version!
                 status: 'pending',
                 input: input as any,
                 idempotency_key: idempotencyKey,
@@ -164,6 +228,7 @@ export class SqlExecutionStore implements ExecutionStore {
             id: row.id,
             workflowId: row.workflow_id,
             workflowName: row.workflow_name,
+            workflowVersion: row.workflow_version, // Mapped
             status: row.status,
             input: row.input,
             output: row.output,
