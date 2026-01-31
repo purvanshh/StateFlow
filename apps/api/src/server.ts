@@ -2,12 +2,12 @@ import 'dotenv/config';
 import { app } from './app.js';
 import { demoStore } from './services/store.js';
 import { runWorkflowExecution } from './services/engine.js';
+import { logger } from '@stateflow/shared';
 
 const PORT = process.env.API_PORT || 4000;
 const HOST = process.env.API_HOST || 'localhost';
 const POLL_INTERVAL = 1000;
 
-// In-process worker for development (single process mode)
 class InlineWorker {
   private isRunning = false;
   private activeExecutions = new Set<string>();
@@ -15,7 +15,10 @@ class InlineWorker {
 
   async start() {
     this.isRunning = true;
-    console.log(`  ⚙️  Inline worker started (ID: ${this.workerId}) (polling every 1s)\n`);
+    logger.info(`Inline worker started`, {
+      workerId: this.workerId,
+      metadata: { pollIntervalMs: POLL_INTERVAL },
+    });
     this.poll();
   }
 
@@ -30,13 +33,20 @@ class InlineWorker {
             if (this.activeExecutions.has(execution.id)) continue;
 
             this.activeExecutions.add(execution.id);
-            console.log(`\n📋 [Worker] Processing: ${execution.id}`);
+            logger.info(`Processing execution`, {
+              executionId: execution.id,
+              workerId: this.workerId,
+            });
 
             runWorkflowExecution(execution.id)
               .then(() => {
                 const e = demoStore.getExecution(execution.id);
-                const emoji = e?.status === 'completed' ? '✅' : '❌';
-                console.log(`\n${emoji} [Worker] Finished: ${execution.id} (${e?.status})`);
+                const status = e?.status || 'unknown';
+                logger.info(`Execution finished`, {
+                  executionId: execution.id,
+                  workerId: this.workerId,
+                  metadata: { status },
+                });
               })
               .finally(() => {
                 this.activeExecutions.delete(execution.id);
@@ -44,7 +54,7 @@ class InlineWorker {
           }
         }
       } catch (error) {
-        console.error('[Worker] Error:', error);
+        logger.error(`Worker poll error`, { error: error as Error, workerId: this.workerId });
       }
 
       await new Promise(r => setTimeout(r, POLL_INTERVAL));
@@ -52,28 +62,18 @@ class InlineWorker {
   }
 }
 
-// Initialize store (seeds demo workflow)
-console.log('\n');
-demoStore; // Forces initialization
+demoStore;
 
 app.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   🚀 StateFlow API Server                                     ║
-║                                                               ║
-║   API:     http://${HOST}:${PORT}                                  ║
-║   Health:  http://${HOST}:${PORT}/api/health                       ║
-║                                                               ║
-║   📌 Quick Test:                                              ║
-║   curl -X POST http://localhost:${PORT}/api/events \\            ║
-║     -H "Content-Type: application/json" \\                     ║
-║     -d '{"workflowName": "demo-workflow"}'                    ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
-  `);
+  logger.info(`StateFlow API Server started`, {
+    metadata: {
+      host: HOST,
+      port: PORT,
+      apiUrl: `http://${HOST}:${PORT}`,
+      healthUrl: `http://${HOST}:${PORT}/api/health`,
+    },
+  });
 
-  // Start inline worker
   const worker = new InlineWorker();
   worker.start();
 });

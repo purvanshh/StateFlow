@@ -301,7 +301,7 @@
       "id": "exec-1769870610954-kd5ob",
       "workflowId": "timeout-wf-001",
       "workflowName": "timeout-workflow",
-      "status": "retry_scheduled",
+      "status": "failed",
       "input": {},
       "output": {
         "start": {
@@ -324,11 +324,11 @@
         {
           "stepId": "long-delay",
           "status": "failed",
-          "startedAt": "2026-01-31T14:43:33.037Z",
-          "completedAt": "2026-01-31T14:43:33.037Z",
+          "startedAt": "2026-01-31T14:48:33.254Z",
+          "completedAt": "2026-01-31T14:48:33.254Z",
           "output": null,
           "error": "Step timed out after 2000ms",
-          "attempts": 1
+          "attempts": 2
         }
       ],
       "logs": [
@@ -365,14 +365,25 @@
           "level": "warn",
           "message": "⚠️ Step failed. Retrying (2/2) in 509ms...",
           "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T14:48:31.251Z",
+          "level": "info",
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T14:48:33.257Z",
+          "level": "error",
+          "message": "💀 Workflow failed: Step timed out after 2000ms"
         }
       ],
       "createdAt": "2026-01-31T14:43:30.954Z",
       "startedAt": "2026-01-31T14:43:31.032Z",
-      "completedAt": "2026-01-31T14:43:31.963Z",
+      "completedAt": "2026-01-31T14:48:33.256Z",
       "retryCount": 1,
-      "lockedAt": "2026-01-31T14:43:31.032Z",
-      "workerId": "inline-worker-r0ac15",
+      "lockedAt": "2026-01-31T14:48:31.248Z",
+      "workerId": "inline-worker-s6afnq",
       "currentStepId": "long-delay",
       "nextRetryAt": "2026-01-31T14:43:33.549Z"
     },

@@ -1,33 +1,37 @@
 {
-    "name": "@stateflow/api",
-    "version": "0.1.0",
-    "private": true,
-    "main": "dist/server.js",
-    "scripts": {
-        "dev": "tsx watch src/server.ts",
-        "build": "tsc",
-        "start": "node dist/server.js",
-        "worker": "tsx src/workers/worker.ts",
-        "lint": "eslint src --ext .ts",
-        "typecheck": "tsc --noEmit",
-        "clean": "rm -rf dist"
-    },
-    "dependencies": {
-        "express": "^4.18.2",
-        "cors": "^2.8.5",
-        "dotenv": "^16.3.1",
-        "helmet": "^7.1.0",
-        "morgan": "^1.10.0",
-        "zod": "^3.22.4",
-        "@stateflow/db": "workspace:*",
-        "@stateflow/workflows": "workspace:*",
-        "@stateflow/shared": "workspace:*"
-    },
-    "devDependencies": {
-        "@types/express": "^4.17.21",
-        "@types/cors": "^2.8.17",
-        "@types/morgan": "^1.9.9",
-        "typescript": "^5.3.0",
-        "tsx": "^4.7.0"
-    }
+  "name": "@stateflow/api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "worker": "tsx src/workers/worker.ts",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "stateflow": "tsx src/cli.ts"
+  },
+  "bin": {
+    "stateflow": "src/cli.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.22.4",
+    "@stateflow/db": "workspace:*",
+    "@stateflow/workflows": "workspace:*",
+    "@stateflow/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0"
+  }
 }

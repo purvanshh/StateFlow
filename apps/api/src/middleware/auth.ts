@@ -26,7 +26,7 @@ export function authMiddleware(
         });
     }
 
-    const token = authHeader.substring(7);
+
 
     try {
         // TODO: Verify JWT token
@@ -56,7 +56,7 @@ export function optionalAuthMiddleware(
     const authHeader = req.headers.authorization;
 
     if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
+
         try {
             // TODO: Verify JWT token
             req.user = { id: 'user-1', email: 'user@example.com' };

@@ -11,5 +11,18 @@
     "input": {},
     "lastStepId": "long-delay",
     "canRetry": true
+  },
+  {
+    "id": "dlq-1769870913258-2lmzws",
+    "executionId": "exec-1769870610954-kd5ob",
+    "workflowId": "timeout-wf-001",
+    "workflowName": "timeout-workflow",
+    "failedAt": "2026-01-31T14:48:33.258Z",
+    "reason": "Step timed out after 2000ms",
+    "lastError": "Step timed out after 2000ms",
+    "totalAttempts": 3,
+    "input": {},
+    "lastStepId": "long-delay",
+    "canRetry": true
   }
 ]

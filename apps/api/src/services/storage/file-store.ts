@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DEMO_WORKFLOW, TIMEOUT_WORKFLOW } from './definitions.js';
 import { ExecutionStore, WorkflowDefinition, Execution, ExecutionLog, StepResultRecord } from './types.js';
+import { logger } from '@stateflow/shared';
 
 export class FileStore implements ExecutionStore {
     private workflows: Map<string, WorkflowDefinition> = new Map();
@@ -51,10 +52,10 @@ export class FileStore implements ExecutionStore {
                     data.idempotencyKeys.forEach(([k, v]: [string, string]) => this.idempotencyKeys.set(k, v));
                 }
 
-                console.log(`📦 Loaded ${this.executions.size} executions from storage`);
+                logger.info(`📦 Loaded ${this.executions.size} executions from storage`);
             }
         } catch (error) {
-            console.error('Failed to load persistence:', error);
+            logger.error('Failed to load persistence', { error: error as Error });
         }
     }
 
@@ -73,7 +74,7 @@ export class FileStore implements ExecutionStore {
 
             fs.writeFileSync(this.persistencePath, JSON.stringify(data, null, 2));
         } catch (error) {
-            console.error('Failed to save persistence:', error);
+            logger.error('Failed to save persistence', { error: error as Error });
         }
     }
 
@@ -99,7 +100,7 @@ export class FileStore implements ExecutionStore {
         });
 
         this.save();
-        console.log('📦 Seeded demo & timeout workflows');
+        logger.info('📦 Seeded demo & timeout workflows');
     }
 
     getWorkflowByName(name: string): WorkflowDefinition | undefined {
@@ -348,8 +349,11 @@ export class FileStore implements ExecutionStore {
                     if (execution) {
                         execution.logs.push(log);
                         this.save();
-                        const emoji = log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : 'ℹ️';
-                        console.log(`${emoji} [${id.substring(0, 12)}] ${log.stepId ? `[${log.stepId}]` : ''} ${log.message}`);
+                        logger.info(`[${id.substring(0, 12)}] ${log.stepId ? `[${log.stepId}]` : ''} ${log.message}`, {
+                            executionId: id,
+                            stepId: log.stepId,
+                            level: log.level as any
+                        });
                     }
                     return;
                 } finally {

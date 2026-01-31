@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { logger } from '@stateflow/shared';
 // import { WorkflowRepository } from '@stateflow/db';
 // import { WorkflowEngine } from '@stateflow/workflows';
 
@@ -31,6 +32,7 @@ workflowsRouter.get('/', async (_req: Request, res: Response) => {
         ];
         res.json({ data: workflows, total: workflows.length });
     } catch (error) {
+        logger.error('Failed to fetch workflows', { error: error as Error });
         res.status(500).json({ error: 'Failed to fetch workflows' });
     }
 });
@@ -43,6 +45,7 @@ workflowsRouter.get('/:id', async (req: Request, res: Response) => {
         const workflow = { id, name: 'Sample Workflow', steps: [], status: 'active' };
         res.json({ data: workflow });
     } catch (error) {
+        logger.error('Failed to fetch workflow', { error: error as Error });
         res.status(500).json({ error: 'Failed to fetch workflow' });
     }
 });
@@ -59,6 +62,7 @@ workflowsRouter.post('/', async (req: Request, res: Response) => {
         const workflow = { id: crypto.randomUUID(), ...parsed.data, createdAt: new Date() };
         res.status(201).json({ data: workflow });
     } catch (error) {
+        logger.error('Failed to create workflow', { error: error as Error });
         res.status(500).json({ error: 'Failed to create workflow' });
     }
 });
@@ -76,6 +80,7 @@ workflowsRouter.put('/:id', async (req: Request, res: Response) => {
         const workflow = { id, ...parsed.data, updatedAt: new Date() };
         res.json({ data: workflow });
     } catch (error) {
+        logger.error('Failed to update workflow', { error: error as Error });
         res.status(500).json({ error: 'Failed to update workflow' });
     }
 });
@@ -87,6 +92,7 @@ workflowsRouter.delete('/:id', async (req: Request, res: Response) => {
         // TODO: Delete from database
         res.json({ message: `Workflow ${id} deleted successfully` });
     } catch (error) {
+        logger.error('Failed to delete workflow', { error: error as Error });
         res.status(500).json({ error: 'Failed to delete workflow' });
     }
 });
@@ -108,6 +114,7 @@ workflowsRouter.post('/:id/execute', async (req: Request, res: Response) => {
 
         res.status(202).json({ data: execution });
     } catch (error) {
+        logger.error('Failed to execute workflow', { error: error as Error });
         res.status(500).json({ error: 'Failed to execute workflow' });
     }
 });
