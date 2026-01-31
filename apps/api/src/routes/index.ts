@@ -5,7 +5,7 @@ import { executionsRouter } from './executions.js';
 import { eventsRouter } from './events.js';
 import { metricsRouter } from './metrics.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Health check
 router.use('/health', healthRouter);

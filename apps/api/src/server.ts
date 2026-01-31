@@ -11,33 +11,37 @@ const POLL_INTERVAL = 1000;
 class InlineWorker {
   private isRunning = false;
   private activeExecutions = new Set<string>();
+  private workerId = `inline-worker-${Math.random().toString(36).substring(7)}`;
 
   async start() {
     this.isRunning = true;
-    console.log('  ⚙️  Inline worker started (polling every 1s)\n');
+    console.log(`  ⚙️  Inline worker started (ID: ${this.workerId}) (polling every 1s)\n`);
     this.poll();
   }
 
   private async poll() {
     while (this.isRunning) {
       try {
-        const pending = demoStore.getPendingExecutions(3);
+        const availableSlots = 3 - this.activeExecutions.size;
+        if (availableSlots > 0) {
+          const pending = demoStore.claimExecutions(this.workerId, availableSlots);
 
-        for (const execution of pending) {
-          if (this.activeExecutions.has(execution.id)) continue;
+          for (const execution of pending) {
+            if (this.activeExecutions.has(execution.id)) continue;
 
-          this.activeExecutions.add(execution.id);
-          console.log(`\n📋 [Worker] Processing: ${execution.id}`);
+            this.activeExecutions.add(execution.id);
+            console.log(`\n📋 [Worker] Processing: ${execution.id}`);
 
-          runWorkflowExecution(execution.id)
-            .then(() => {
-              const e = demoStore.getExecution(execution.id);
-              const emoji = e?.status === 'completed' ? '✅' : '❌';
-              console.log(`\n${emoji} [Worker] Finished: ${execution.id} (${e?.status})`);
-            })
-            .finally(() => {
-              this.activeExecutions.delete(execution.id);
-            });
+            runWorkflowExecution(execution.id)
+              .then(() => {
+                const e = demoStore.getExecution(execution.id);
+                const emoji = e?.status === 'completed' ? '✅' : '❌';
+                console.log(`\n${emoji} [Worker] Finished: ${execution.id} (${e?.status})`);
+              })
+              .finally(() => {
+                this.activeExecutions.delete(execution.id);
+              });
+          }
         }
       } catch (error) {
         console.error('[Worker] Error:', error);

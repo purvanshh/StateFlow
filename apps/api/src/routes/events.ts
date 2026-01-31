@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { demoStore } from '../services/store.js';
 
-const eventsRouter = Router();
+const eventsRouter: Router = Router();
 
 // Validation schema
 const triggerEventSchema = z.object({

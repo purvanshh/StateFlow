@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { demoStore } from '../services/store.js';
 
-const executionsRouter = Router();
+const executionsRouter: Router = Router();
 
 // GET /api/executions - List executions
-executionsRouter.get('/', async (req: Request, res: Response) => {
+executionsRouter.get('/', async (_req: Request, res: Response) => {
     try {
         const executions = demoStore.getAllExecutions().map(e => ({
             id: e.id,
@@ -32,7 +32,7 @@ executionsRouter.get('/', async (req: Request, res: Response) => {
 executionsRouter.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const execution = demoStore.getExecution(id);
+        const execution = demoStore.getExecution(id || '');
 
         if (!execution) {
             return res.status(404).json({ error: 'Execution not found' });
@@ -95,7 +95,7 @@ executionsRouter.get('/:id', async (req: Request, res: Response) => {
 executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const execution = demoStore.getExecution(id);
+        const execution = demoStore.getExecution(id || '');
 
         if (!execution) {
             return res.status(404).json({ error: 'Execution not found' });
@@ -105,8 +105,20 @@ executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Cannot cancel finished execution' });
         }
 
-        // TODO: Implement actual cancellation
-        res.json({ message: `Execution ${id} cancellation requested` });
+        // Implement actual cancellation
+        demoStore.updateExecution(id || '', {
+            status: 'cancelled',
+            completedAt: new Date(), // Mark as finished
+            error: 'Cancelled by user',
+        });
+
+        demoStore.addExecutionLog(id || '', {
+            timestamp: new Date(),
+            level: 'warn',
+            message: '🛑 Cancellation requested via API',
+        });
+
+        res.json({ message: `Execution ${id} cancelled successfully` });
     } catch (error) {
         res.status(500).json({ error: 'Failed to cancel execution' });
     }
@@ -116,7 +128,7 @@ executionsRouter.post('/:id/cancel', async (req: Request, res: Response) => {
 executionsRouter.get('/:id/logs', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const execution = demoStore.getExecution(id);
+        const execution = demoStore.getExecution(id || '');
 
         if (!execution) {
             return res.status(404).json({ error: 'Execution not found' });

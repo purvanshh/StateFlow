@@ -1,0 +1,15 @@
+[
+  {
+    "id": "dlq-1769861060250-r8lunp",
+    "executionId": "exec-1769861054900-ebrp9w",
+    "workflowId": "timeout-wf-001",
+    "workflowName": "timeout-workflow",
+    "failedAt": "2026-01-31T12:04:20.250Z",
+    "reason": "Step timed out after 2000ms",
+    "lastError": "Step timed out after 2000ms",
+    "totalAttempts": 3,
+    "input": {},
+    "lastStepId": "long-delay",
+    "canRetry": true
+  }
+]

@@ -1,4 +1,4 @@
-import type { ExecutionStatus, StepStatus } from '../types.js';
+import type { ExecutionStatus } from '../types.js';
 
 // State machine states
 export type MachineState = 'idle' | 'running' | 'paused' | 'completed' | 'failed';

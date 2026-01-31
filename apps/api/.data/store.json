@@ -79,48 +79,75 @@
         }
       },
       "status": "active",
-      "createdAt": "2026-01-31T11:38:22.565Z"
+      "createdAt": "2026-01-31T12:04:02.218Z"
+    },
+    {
+      "id": "timeout-wf-001",
+      "name": "timeout-workflow",
+      "description": "A workflow that guarantees a timeout failure",
+      "definition": {
+        "steps": [
+          {
+            "id": "start",
+            "type": "log",
+            "name": "Start Timeout Test",
+            "config": {
+              "message": "🚀 Starting timeout test",
+              "level": "info"
+            },
+            "next": "long-delay"
+          },
+          {
+            "id": "long-delay",
+            "type": "delay",
+            "name": "Long Delay",
+            "config": {
+              "durationMs": 5000
+            },
+            "timeoutMs": 2000,
+            "retryPolicy": {
+              "maxAttempts": 2,
+              "delayMs": 500
+            },
+            "next": "success"
+          },
+          {
+            "id": "success",
+            "type": "log",
+            "name": "Should Not Reach Here",
+            "config": {
+              "message": "❌ Timeout failed to trigger!",
+              "level": "error"
+            }
+          }
+        ],
+        "trigger": {
+          "type": "manual"
+        }
+      },
+      "status": "active",
+      "createdAt": "2026-01-31T12:04:02.219Z"
     }
   ],
   "executions": [
     {
-      "id": "exec-1769859521495-94k72q",
-      "workflowId": "demo-wf-001",
-      "workflowName": "demo-workflow",
-      "status": "completed",
+      "id": "exec-1769861054900-ebrp9w",
+      "workflowId": "timeout-wf-001",
+      "workflowName": "timeout-workflow",
+      "status": "failed",
       "input": {},
       "output": {
         "start": {
           "logged": true
-        },
-        "fetch-data": {
-          "statusCode": 200,
-          "data": {
-            "userId": 1,
-            "id": 1,
-            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
-          }
-        },
-        "process-data": {
-          "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-          "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
-        },
-        "check-result": {
-          "condition": true
-        },
-        "success-log": {
-          "logged": true
         }
       },
-      "error": null,
-      "idempotencyKey": "persist-test-1",
+      "error": "Step timed out after 2000ms",
       "steps": [
         {
           "stepId": "start",
           "status": "completed",
-          "startedAt": "2026-01-31T11:38:41.595Z",
-          "completedAt": "2026-01-31T11:38:41.595Z",
+          "startedAt": "2026-01-31T12:04:15.240Z",
+          "completedAt": "2026-01-31T12:04:15.240Z",
           "output": {
             "logged": true
           },
@@ -128,127 +155,305 @@
           "attempts": 1
         },
         {
-          "stepId": "fetch-data",
-          "status": "completed",
-          "startedAt": "2026-01-31T11:38:41.909Z",
-          "completedAt": "2026-01-31T11:38:41.909Z",
-          "output": {
-            "statusCode": 200,
-            "data": {
-              "userId": 1,
-              "id": 1,
-              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-              "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
-            }
-          },
-          "error": null,
-          "attempts": 1
-        },
-        {
-          "stepId": "process-data",
-          "status": "completed",
-          "startedAt": "2026-01-31T11:38:41.909Z",
-          "completedAt": "2026-01-31T11:38:41.909Z",
-          "output": {
-            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-            "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
-          },
-          "error": null,
-          "attempts": 1
-        },
-        {
-          "stepId": "check-result",
-          "status": "completed",
-          "startedAt": "2026-01-31T11:38:41.910Z",
-          "completedAt": "2026-01-31T11:38:41.910Z",
-          "output": {
-            "condition": true
-          },
-          "error": null,
-          "attempts": 1
-        },
-        {
-          "stepId": "success-log",
-          "status": "completed",
-          "startedAt": "2026-01-31T11:38:41.910Z",
-          "completedAt": "2026-01-31T11:38:41.910Z",
-          "output": {
-            "logged": true
-          },
-          "error": null,
-          "attempts": 1
+          "stepId": "long-delay",
+          "status": "failed",
+          "startedAt": "2026-01-31T12:04:20.248Z",
+          "completedAt": "2026-01-31T12:04:20.248Z",
+          "output": null,
+          "error": "Step timed out after 2000ms",
+          "attempts": 2
         }
       ],
       "logs": [
         {
-          "timestamp": "2026-01-31T11:38:41.495Z",
+          "timestamp": "2026-01-31T12:04:14.901Z",
           "level": "info",
-          "message": "Execution queued for workflow: demo-workflow"
+          "message": "Execution queued for workflow: timeout-workflow"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.595Z",
+          "timestamp": "2026-01-31T12:04:15.239Z",
           "level": "info",
-          "message": "▶️  Starting workflow: demo-workflow"
+          "message": "▶️  Starting workflow: timeout-workflow"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.595Z",
+          "timestamp": "2026-01-31T12:04:15.239Z",
           "level": "info",
-          "message": "⚡ Executing step: Start Workflow (log)",
+          "message": "⚡ Executing step: Start Timeout Test (log)",
           "stepId": "start"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.595Z",
+          "timestamp": "2026-01-31T12:04:15.240Z",
           "level": "info",
-          "message": "🚀 Starting demo workflow",
+          "message": "🚀 Starting timeout test",
           "stepId": "start"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.595Z",
+          "timestamp": "2026-01-31T12:04:15.240Z",
           "level": "info",
-          "message": "⚡ Executing step: Fetch Sample Data (http)",
-          "stepId": "fetch-data"
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.909Z",
-          "level": "info",
-          "message": "⚡ Executing step: Process Data (transform)",
-          "stepId": "process-data"
+          "timestamp": "2026-01-31T12:04:17.243Z",
+          "level": "warn",
+          "message": "⚠️ Step failed. Retrying (2/2) in 573ms...",
+          "stepId": "long-delay"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.909Z",
+          "timestamp": "2026-01-31T12:04:18.246Z",
           "level": "info",
-          "message": "⚡ Executing step: Check Result (condition)",
-          "stepId": "check-result"
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
         },
         {
-          "timestamp": "2026-01-31T11:38:41.910Z",
-          "level": "info",
-          "message": "⚡ Executing step: Log Success (log)",
-          "stepId": "success-log"
-        },
-        {
-          "timestamp": "2026-01-31T11:38:41.910Z",
-          "level": "info",
-          "message": "✅ Workflow completed successfully!",
-          "stepId": "success-log"
-        },
-        {
-          "timestamp": "2026-01-31T11:38:41.910Z",
-          "level": "info",
-          "message": "🎉 Workflow completed successfully!"
+          "timestamp": "2026-01-31T12:04:20.249Z",
+          "level": "error",
+          "message": "💀 Workflow failed: Step timed out after 2000ms"
         }
       ],
-      "createdAt": "2026-01-31T11:38:41.495Z",
-      "startedAt": "2026-01-31T11:38:41.594Z",
-      "completedAt": "2026-01-31T11:38:41.910Z"
+      "createdAt": "2026-01-31T12:04:14.900Z",
+      "startedAt": "2026-01-31T12:04:15.238Z",
+      "completedAt": "2026-01-31T12:04:20.249Z",
+      "retryCount": 1,
+      "nextRetryAt": "2026-01-31T12:04:17.816Z",
+      "currentStepId": "long-delay"
     },
     {
-      "id": "exec-1769860174459-scjtfj",
+      "id": "exec-1769861380708-29w62",
+      "workflowId": "timeout-wf-001",
+      "workflowName": "timeout-workflow",
+      "status": "cancelled",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        }
+      },
+      "error": "Cancelled by user",
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T12:09:41.139Z",
+          "completedAt": "2026-01-31T12:09:41.139Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "long-delay",
+          "status": "failed",
+          "startedAt": "2026-01-31T12:09:43.142Z",
+          "completedAt": "2026-01-31T12:09:43.142Z",
+          "output": null,
+          "error": "Step timed out after 2000ms",
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T12:09:40.709Z",
+          "level": "info",
+          "message": "Execution queued for workflow: timeout-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T12:09:41.138Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Timeout Test (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T12:09:41.138Z",
+          "level": "info",
+          "message": "🚀 Starting timeout test",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T12:09:41.140Z",
+          "level": "info",
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T12:09:43.144Z",
+          "level": "warn",
+          "message": "⚠️ Step failed. Retrying (2/2) in 500ms...",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T12:09:48.486Z",
+          "level": "warn",
+          "message": "🛑 Cancellation requested via API"
+        }
+      ],
+      "createdAt": "2026-01-31T12:09:40.708Z",
+      "startedAt": "2026-01-31T12:09:41.136Z",
+      "completedAt": "2026-01-31T12:09:48.486Z",
+      "retryCount": 1,
+      "workerId": "inline-worker-z2yjap",
+      "lockedAt": "2026-01-31T12:09:41.136Z",
+      "currentStepId": "long-delay",
+      "nextRetryAt": "2026-01-31T12:09:43.643Z"
+    },
+    {
+      "id": "exec-1769870610954-kd5ob",
+      "workflowId": "timeout-wf-001",
+      "workflowName": "timeout-workflow",
+      "status": "retry_scheduled",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        }
+      },
+      "error": "Step timed out after 2000ms",
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T14:43:31.035Z",
+          "completedAt": "2026-01-31T14:43:31.035Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        },
+        {
+          "stepId": "long-delay",
+          "status": "failed",
+          "startedAt": "2026-01-31T14:43:33.037Z",
+          "completedAt": "2026-01-31T14:43:33.037Z",
+          "output": null,
+          "error": "Step timed out after 2000ms",
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T14:43:30.954Z",
+          "level": "info",
+          "message": "Execution queued for workflow: timeout-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T14:43:31.033Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Timeout Test (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:43:31.034Z",
+          "level": "info",
+          "message": "🚀 Starting timeout test",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:43:31.036Z",
+          "level": "info",
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T14:43:31.964Z",
+          "level": "warn",
+          "message": "🛑 Cancellation requested via API"
+        },
+        {
+          "timestamp": "2026-01-31T14:43:33.041Z",
+          "level": "warn",
+          "message": "⚠️ Step failed. Retrying (2/2) in 509ms...",
+          "stepId": "long-delay"
+        }
+      ],
+      "createdAt": "2026-01-31T14:43:30.954Z",
+      "startedAt": "2026-01-31T14:43:31.032Z",
+      "completedAt": "2026-01-31T14:43:31.963Z",
+      "retryCount": 1,
+      "lockedAt": "2026-01-31T14:43:31.032Z",
+      "workerId": "inline-worker-r0ac15",
+      "currentStepId": "long-delay",
+      "nextRetryAt": "2026-01-31T14:43:33.549Z"
+    },
+    {
+      "id": "exec-1769870655507-u3mpr9",
+      "workflowId": "timeout-wf-001",
+      "workflowName": "timeout-workflow",
+      "status": "cancelled",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        }
+      },
+      "error": "Cancelled by user",
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T14:44:15.666Z",
+          "completedAt": "2026-01-31T14:44:15.666Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T14:44:15.508Z",
+          "level": "info",
+          "message": "Execution queued for workflow: timeout-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T14:44:15.665Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Timeout Test (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:44:15.665Z",
+          "level": "info",
+          "message": "🚀 Starting timeout test",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:44:15.668Z",
+          "level": "info",
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T14:44:16.524Z",
+          "level": "warn",
+          "message": "🛑 Cancellation requested via API"
+        },
+        {
+          "timestamp": "2026-01-31T14:44:17.670Z",
+          "level": "warn",
+          "message": "🛑 Execution cancelled during step execution"
+        }
+      ],
+      "createdAt": "2026-01-31T14:44:15.507Z",
+      "startedAt": "2026-01-31T14:44:15.663Z",
+      "completedAt": "2026-01-31T14:44:16.522Z",
+      "retryCount": 0,
+      "lockedAt": "2026-01-31T14:44:15.663Z",
+      "workerId": "inline-worker-b7yi2",
+      "currentStepId": "long-delay"
+    },
+    {
+      "id": "exec-1769870760421-lmn6jc",
       "workflowId": "demo-wf-001",
       "workflowName": "demo-workflow",
       "status": "completed",
-      "input": {},
+      "input": {
+        "foo": "bar"
+      },
       "output": {
+        "foo": "bar",
         "start": {
           "logged": true
         },
@@ -277,8 +482,8 @@
         {
           "stepId": "start",
           "status": "completed",
-          "startedAt": "2026-01-31T11:49:34.537Z",
-          "completedAt": "2026-01-31T11:49:34.537Z",
+          "startedAt": "2026-01-31T14:46:00.902Z",
+          "completedAt": "2026-01-31T14:46:00.902Z",
           "output": {
             "logged": true
           },
@@ -288,8 +493,8 @@
         {
           "stepId": "fetch-data",
           "status": "completed",
-          "startedAt": "2026-01-31T11:49:34.711Z",
-          "completedAt": "2026-01-31T11:49:34.711Z",
+          "startedAt": "2026-01-31T14:46:01.254Z",
+          "completedAt": "2026-01-31T14:46:01.254Z",
           "output": {
             "statusCode": 200,
             "data": {
@@ -305,8 +510,8 @@
         {
           "stepId": "process-data",
           "status": "completed",
-          "startedAt": "2026-01-31T11:49:34.712Z",
-          "completedAt": "2026-01-31T11:49:34.712Z",
+          "startedAt": "2026-01-31T14:46:01.261Z",
+          "completedAt": "2026-01-31T14:46:01.261Z",
           "output": {
             "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
             "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
@@ -317,8 +522,8 @@
         {
           "stepId": "check-result",
           "status": "completed",
-          "startedAt": "2026-01-31T11:49:34.714Z",
-          "completedAt": "2026-01-31T11:49:34.714Z",
+          "startedAt": "2026-01-31T14:46:01.265Z",
+          "completedAt": "2026-01-31T14:46:01.265Z",
           "output": {
             "condition": true
           },
@@ -328,8 +533,8 @@
         {
           "stepId": "success-log",
           "status": "completed",
-          "startedAt": "2026-01-31T11:49:34.715Z",
-          "completedAt": "2026-01-31T11:49:34.715Z",
+          "startedAt": "2026-01-31T14:46:01.269Z",
+          "completedAt": "2026-01-31T14:46:01.269Z",
           "output": {
             "logged": true
           },
@@ -339,73 +544,133 @@
       ],
       "logs": [
         {
-          "timestamp": "2026-01-31T11:49:34.459Z",
+          "timestamp": "2026-01-31T14:46:00.422Z",
           "level": "info",
           "message": "Execution queued for workflow: demo-workflow"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.536Z",
-          "level": "info",
-          "message": "▶️  Starting workflow: demo-workflow"
-        },
-        {
-          "timestamp": "2026-01-31T11:49:34.536Z",
+          "timestamp": "2026-01-31T14:46:00.901Z",
           "level": "info",
           "message": "⚡ Executing step: Start Workflow (log)",
           "stepId": "start"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.537Z",
+          "timestamp": "2026-01-31T14:46:00.902Z",
           "level": "info",
           "message": "🚀 Starting demo workflow",
           "stepId": "start"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.537Z",
+          "timestamp": "2026-01-31T14:46:00.904Z",
           "level": "info",
           "message": "⚡ Executing step: Fetch Sample Data (http)",
           "stepId": "fetch-data"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.712Z",
+          "timestamp": "2026-01-31T14:46:01.259Z",
           "level": "info",
           "message": "⚡ Executing step: Process Data (transform)",
           "stepId": "process-data"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.713Z",
+          "timestamp": "2026-01-31T14:46:01.263Z",
           "level": "info",
           "message": "⚡ Executing step: Check Result (condition)",
           "stepId": "check-result"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.714Z",
+          "timestamp": "2026-01-31T14:46:01.267Z",
           "level": "info",
           "message": "⚡ Executing step: Log Success (log)",
           "stepId": "success-log"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.714Z",
+          "timestamp": "2026-01-31T14:46:01.267Z",
           "level": "info",
           "message": "✅ Workflow completed successfully!",
           "stepId": "success-log"
         },
         {
-          "timestamp": "2026-01-31T11:49:34.715Z",
+          "timestamp": "2026-01-31T14:46:01.272Z",
           "level": "info",
           "message": "🎉 Workflow completed successfully!"
         }
       ],
-      "createdAt": "2026-01-31T11:49:34.459Z",
-      "startedAt": "2026-01-31T11:49:34.535Z",
-      "completedAt": "2026-01-31T11:49:34.715Z",
-      "retryCount": 0
+      "createdAt": "2026-01-31T14:46:00.421Z",
+      "startedAt": "2026-01-31T14:46:00.899Z",
+      "completedAt": "2026-01-31T14:46:01.271Z",
+      "retryCount": 0,
+      "lockedAt": "2026-01-31T14:46:00.899Z",
+      "workerId": "inline-worker-s6afnq"
+    },
+    {
+      "id": "exec-1769870761434-1u57bd",
+      "workflowId": "timeout-wf-001",
+      "workflowName": "timeout-workflow",
+      "status": "cancelled",
+      "input": {},
+      "output": {
+        "start": {
+          "logged": true
+        }
+      },
+      "error": "Cancelled by user",
+      "steps": [
+        {
+          "stepId": "start",
+          "status": "completed",
+          "startedAt": "2026-01-31T14:46:01.911Z",
+          "completedAt": "2026-01-31T14:46:01.911Z",
+          "output": {
+            "logged": true
+          },
+          "error": null,
+          "attempts": 1
+        }
+      ],
+      "logs": [
+        {
+          "timestamp": "2026-01-31T14:46:01.435Z",
+          "level": "info",
+          "message": "Execution queued for workflow: timeout-workflow"
+        },
+        {
+          "timestamp": "2026-01-31T14:46:01.907Z",
+          "level": "info",
+          "message": "⚡ Executing step: Start Timeout Test (log)",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:46:01.908Z",
+          "level": "info",
+          "message": "🚀 Starting timeout test",
+          "stepId": "start"
+        },
+        {
+          "timestamp": "2026-01-31T14:46:01.915Z",
+          "level": "info",
+          "message": "⚡ Executing step: Long Delay (delay)",
+          "stepId": "long-delay"
+        },
+        {
+          "timestamp": "2026-01-31T14:46:02.442Z",
+          "level": "warn",
+          "message": "🛑 Cancellation requested via API"
+        },
+        {
+          "timestamp": "2026-01-31T14:46:03.917Z",
+          "level": "warn",
+          "message": "🛑 Execution cancelled during step execution"
+        }
+      ],
+      "createdAt": "2026-01-31T14:46:01.435Z",
+      "startedAt": "2026-01-31T14:46:01.904Z",
+      "completedAt": "2026-01-31T14:46:02.440Z",
+      "retryCount": 0,
+      "lockedAt": "2026-01-31T14:46:01.904Z",
+      "workerId": "inline-worker-s6afnq",
+      "currentStepId": "long-delay"
     }
   ],
-  "idempotencyKeys": [
-    [
-      "persist-test-1",
-      "exec-1769859521495-94k72q"
-    ]
-  ]
+  "idempotencyKeys": []
 }

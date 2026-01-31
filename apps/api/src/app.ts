@@ -6,7 +6,7 @@ import { router } from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 
-const app = express();
+const app: express.Application = express();
 
 // Security middleware
 app.use(helmet());

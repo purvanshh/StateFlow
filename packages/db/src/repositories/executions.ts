@@ -61,12 +61,12 @@ export class ExecutionRepository {
     }
 
     async create(input: CreateExecutionInput) {
-        const { data, error } = await this.db
-            .from('executions')
+        const { data, error } = await (this.db
+            .from('executions') as any)
             .insert({
                 workflow_id: input.workflowId,
                 status: 'pending',
-                input: input.input,
+                input: input.input as any,
                 output: null,
                 error: null,
                 current_step: null,
@@ -90,8 +90,8 @@ export class ExecutionRepository {
         if (input.startedAt !== undefined) updateData.started_at = input.startedAt;
         if (input.completedAt !== undefined) updateData.completed_at = input.completedAt;
 
-        const { data, error } = await this.db
-            .from('executions')
+        const { data, error } = await (this.db
+            .from('executions') as any)
             .update(updateData)
             .eq('id', id)
             .select()
@@ -119,14 +119,14 @@ export class ExecutionRepository {
         message: string;
         metadata?: Record<string, unknown>;
     }) {
-        const { error } = await this.db
-            .from('execution_logs')
+        const { error } = await (this.db
+            .from('execution_logs') as any)
             .insert({
                 execution_id: executionId,
                 step_id: log.stepId ?? null,
                 level: log.level,
                 message: log.message,
-                metadata: log.metadata ?? null,
+                metadata: (log.metadata ?? null) as any,
             });
 
         if (error) throw error;

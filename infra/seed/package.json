@@ -1,0 +1,17 @@
+{
+    "name": "seed-script",
+    "version": "1.0.0",
+    "description": "Database seed script",
+    "main": "seed.ts",
+    "scripts": {
+        "start": "ts-node seed.ts"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.39.0",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.1",
+        "typescript": "^5.3.0"
+    }
+}

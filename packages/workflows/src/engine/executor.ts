@@ -13,7 +13,7 @@ const builtInHandlers: Map<string, StepHandler> = new Map();
 // HTTP Request Handler
 builtInHandlers.set('http', {
     type: 'http',
-    async execute(step, context): Promise<StepResult> {
+    async execute(step, _context): Promise<StepResult> {
         const config = step.config as {
             url: string;
             method?: string;
@@ -204,6 +204,18 @@ class DefaultStepHandlerRegistry implements StepHandlerRegistry {
 
 export const stepHandlerRegistry = new DefaultStepHandlerRegistry();
 
+// Helper to enforce timeout
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+            setTimeout(() => {
+                reject(new Error(`Step execution timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+        }),
+    ]);
+}
+
 // Execute a single step with retry support
 export async function executeStep(
     step: WorkflowStep,
@@ -225,7 +237,16 @@ export async function executeStep(
 
     try {
         const result = await withRetry(
-            () => handler.execute(step, context),
+            async () => {
+                const executionPromise = handler.execute(step, context);
+
+                // If timeout is configured, wrap with timeout
+                if (step.timeoutMs && step.timeoutMs > 0) {
+                    return withTimeout(executionPromise, step.timeoutMs);
+                }
+
+                return executionPromise;
+            },
             retryPolicy,
             (attempt, error, delay) => {
                 context.logs.push({
@@ -245,3 +266,4 @@ export async function executeStep(
         };
     }
 }
+

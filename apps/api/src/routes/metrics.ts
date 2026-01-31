@@ -3,7 +3,7 @@ import { metrics } from '../services/metrics.js';
 import { dlq } from '../services/dlq.js';
 import { demoStore } from '../services/store.js';
 
-const metricsRouter = Router();
+const metricsRouter: Router = Router();
 
 /**
  * GET /api/metrics

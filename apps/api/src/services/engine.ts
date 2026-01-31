@@ -3,7 +3,7 @@
  * Wraps the workflow engine for use in the API
  */
 
-import { DEMO_WORKFLOW, demoStore } from './store.js';
+import { demoStore } from './store.js';
 import { metrics, METRIC_NAMES } from './metrics.js';
 import { dlq } from './dlq.js';
 import { calculateNextDelay } from './retry-math.js';
@@ -15,6 +15,7 @@ interface WorkflowStep {
     config?: Record<string, unknown>;
     next?: string;
     onError?: string;
+    timeoutMs?: number; // Added timeout support
     retryPolicy?: {
         maxAttempts: number;
         delayMs: number;
@@ -40,10 +41,10 @@ interface ExecutionContext {
  */
 async function executeStep(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
     const startTime = Date.now();
+    const TIMEOUT_MS = step.timeoutMs || 60000; // Default 60s timeout
 
-    // Simulate step-level failure injection
+    // 1. Failure Injection
     const failureRate = (step.config as any)?.failureRate as number | undefined;
-
     if (failureRate !== undefined && Math.random() < failureRate) {
         demoStore.addExecutionLog(context.executionId, {
             timestamp: new Date(),
@@ -58,127 +59,141 @@ async function executeStep(step: WorkflowStep, context: ExecutionContext): Promi
         };
     }
 
-    try {
-        switch (step.type) {
-            case 'log': {
-                const config = step.config as { message: string; level?: string };
-                demoStore.addExecutionLog(context.executionId, {
-                    timestamp: new Date(),
-                    level: (config.level as 'info' | 'warn' | 'error') || 'info',
-                    message: config.message,
-                    stepId: step.id,
-                });
-                return {
-                    status: 'completed',
-                    output: { logged: true },
-                    nextStep: step.next,
-                    duration: Date.now() - startTime,
-                };
-            }
-
-            case 'http': {
-                const config = step.config as { url: string; method?: string };
-                const response = await fetch(config.url, { method: config.method || 'GET' });
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
+    // 2. Define Core Logic
+    const executeLogic = async (): Promise<StepResult> => {
+        try {
+            switch (step.type) {
+                case 'log': {
+                    const config = step.config as { message: string; level?: string };
+                    demoStore.addExecutionLog(context.executionId, {
+                        timestamp: new Date(),
+                        level: (config.level as 'info' | 'warn' | 'error') || 'info',
+                        message: config.message,
+                        stepId: step.id,
+                    });
                     return {
-                        status: 'failed',
-                        error: new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`),
-                        duration: Date.now() - startTime,
+                        status: 'completed',
+                        output: { logged: true },
+                        nextStep: step.next,
                     };
                 }
 
-                return {
-                    status: 'completed',
-                    output: { statusCode: response.status, data },
-                    nextStep: step.next,
-                    duration: Date.now() - startTime,
-                };
-            }
+                case 'http': {
+                    const config = step.config as { url: string; method?: string };
+                    const response = await fetch(config.url, { method: config.method || 'GET' });
+                    const data = await response.json().catch(() => ({}));
 
-            case 'transform': {
-                const config = step.config as { mapping: Record<string, string> };
-                const output: Record<string, unknown> = {};
+                    if (!response.ok) {
+                        return {
+                            status: 'failed',
+                            error: new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`),
+                        };
+                    }
 
-                if (config.mapping) {
-                    for (const [key, path] of Object.entries(config.mapping)) {
-                        const parts = path.split('.');
-                        let value: unknown = context.state;
-                        for (const part of parts) {
-                            if (value && typeof value === 'object' && part in value) {
-                                value = (value as Record<string, unknown>)[part];
-                            } else {
-                                value = undefined;
-                                break;
+                    return {
+                        status: 'completed',
+                        output: { statusCode: response.status, data },
+                        nextStep: step.next,
+                    };
+                }
+
+                case 'transform': {
+                    const config = step.config as { mapping: Record<string, string> };
+                    const output: Record<string, unknown> = {};
+
+                    if (config.mapping) {
+                        for (const [key, path] of Object.entries(config.mapping)) {
+                            const parts = path.split('.');
+                            let value: unknown = context.state;
+                            for (const part of parts) {
+                                if (value && typeof value === 'object' && part in value) {
+                                    value = (value as Record<string, unknown>)[part];
+                                } else {
+                                    value = undefined;
+                                    break;
+                                }
                             }
+                            output[key] = value;
                         }
-                        output[key] = value;
                     }
+
+                    return {
+                        status: 'completed',
+                        output,
+                        nextStep: step.next,
+                    };
                 }
 
-                return {
-                    status: 'completed',
-                    output,
-                    nextStep: step.next,
-                    duration: Date.now() - startTime,
-                };
-            }
+                case 'condition': {
+                    const config = step.config as {
+                        field: string;
+                        operator: string;
+                        value: unknown;
+                        onTrue: string;
+                        onFalse: string;
+                    };
 
-            case 'condition': {
-                const config = step.config as {
-                    field: string;
-                    operator: string;
-                    value: unknown;
-                    onTrue: string;
-                    onFalse: string;
-                };
-
-                const parts = config.field.split('.');
-                let fieldValue: unknown = context.state;
-                for (const part of parts) {
-                    if (fieldValue && typeof fieldValue === 'object' && part in fieldValue) {
-                        fieldValue = (fieldValue as Record<string, unknown>)[part];
-                    } else {
-                        fieldValue = undefined;
-                        break;
+                    const parts = config.field.split('.');
+                    let fieldValue: unknown = context.state;
+                    for (const part of parts) {
+                        if (fieldValue && typeof fieldValue === 'object' && part in fieldValue) {
+                            fieldValue = (fieldValue as Record<string, unknown>)[part];
+                        } else {
+                            fieldValue = undefined;
+                            break;
+                        }
                     }
+
+                    let result = false;
+                    switch (config.operator) {
+                        case 'eq': result = fieldValue === config.value; break;
+                        case 'ne': result = fieldValue !== config.value; break;
+                        case 'gt': result = Number(fieldValue) > Number(config.value); break;
+                        case 'lt': result = Number(fieldValue) < Number(config.value); break;
+                    }
+
+                    return {
+                        status: 'completed',
+                        output: { condition: result },
+                        nextStep: result ? config.onTrue : config.onFalse,
+                    };
                 }
 
-                let result = false;
-                switch (config.operator) {
-                    case 'eq': result = fieldValue === config.value; break;
-                    case 'ne': result = fieldValue !== config.value; break;
-                    case 'gt': result = Number(fieldValue) > Number(config.value); break;
-                    case 'lt': result = Number(fieldValue) < Number(config.value); break;
+                case 'delay': {
+                    const config = step.config as { durationMs: number };
+                    await new Promise(r => setTimeout(r, config.durationMs || 1000));
+                    return {
+                        status: 'completed',
+                        output: { delayed: true },
+                        nextStep: step.next,
+                    };
                 }
 
-                return {
-                    status: 'completed',
-                    output: { condition: result },
-                    nextStep: result ? config.onTrue : config.onFalse,
-                    duration: Date.now() - startTime,
-                };
+                default:
+                    return {
+                        status: 'failed',
+                        error: new Error(`Unknown step type: ${step.type}`),
+                    };
             }
-
-            case 'delay': {
-                const config = step.config as { durationMs: number };
-                await new Promise(r => setTimeout(r, config.durationMs || 1000));
-                return {
-                    status: 'completed',
-                    output: { delayed: true },
-                    nextStep: step.next,
-                    duration: Date.now() - startTime,
-                };
-            }
-
-            default:
-                return {
-                    status: 'failed',
-                    error: new Error(`Unknown step type: ${step.type}`),
-                    duration: Date.now() - startTime,
-                };
+        } catch (error) {
+            throw error; // Let wrapper handle it
         }
+    };
+
+    // 3. Wrap with Timeout
+    try {
+        const result = await Promise.race([
+            executeLogic(),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Step timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)
+            )
+        ]);
+
+        return {
+            ...result,
+            duration: Date.now() - startTime
+        };
+
     } catch (error) {
         return {
             status: 'failed',
@@ -254,6 +269,25 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
 
     try {
         while (currentStepId) {
+            // RELOAD STATE (Crucial for multi-process cancellation awareness)
+            demoStore.load();
+            const currentExecutionState = demoStore.getExecution(executionId);
+
+            if (!currentExecutionState) {
+                console.error(`Execution missing during run: ${executionId}`);
+                return;
+            }
+
+            // Check for CANCELLATION
+            if (currentExecutionState.status === 'cancelled') {
+                demoStore.addExecutionLog(executionId, {
+                    timestamp: new Date(),
+                    level: 'warn',
+                    message: '🛑 Execution cancelled by user request',
+                });
+                return; // Exit loop immediately
+            }
+
             const step = stepMap.get(currentStepId);
             if (!step) throw new Error(`Step not found: ${currentStepId}`);
 
@@ -274,6 +308,18 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
             const attemptCount = (execution.retryCount || 0) + 1;
 
             const result = await executeStep(step, context);
+
+            // Double-check cancellation after long-running step
+            demoStore.load();
+            const freshState = demoStore.getExecution(executionId);
+            if (freshState?.status === 'cancelled') {
+                demoStore.addExecutionLog(executionId, {
+                    timestamp: new Date(),
+                    level: 'warn',
+                    message: '🛑 Execution cancelled during step execution',
+                });
+                return;
+            }
 
             if (result.status === 'completed') {
                 // Success!
@@ -315,14 +361,17 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
                     startedAt: new Date(),
                     completedAt: new Date(),
                     output: null,
-                    error: result.error?.message,
+                    error: result.error?.message || null,
                     attempts: attempts,
                 });
 
                 if (attempts < maxAttempts) { // Note: If attempts < max, we schedule retry. If attempts == max, next one is fatal? No, attempts counts current failure.
                     // If attempts (1) <= max (3), we retry?
                     // Usually: 1st fail -> retry (attempt 2). 2nd fail -> retry (attempt 3). 3rd fail -> Fatal.
-                    // So if attempts < maxAttempts, we schedule.
+                    // So if attempts <= maxAttempts, we schedule.
+                    // Wait, if maxAttempts is 3, and attempts is 1, next is 2. 2 < 3 true.
+                    // If attempts is 3, next is 4 (overflow). 3 < 3 false.
+                    // So attempts < maxAttempts is correct for scheduling *another* retry.
 
                     // SCHEDULE RETRY
                     const baseDelay = step.retryPolicy?.delayMs || 1000;
@@ -333,7 +382,7 @@ export async function runWorkflowExecution(executionId: string): Promise<void> {
                         status: 'retry_scheduled',
                         retryCount: attempts,
                         nextRetryAt: nextRetryAt,
-                        error: result.error?.message,
+                        error: result.error?.message || null,
                         currentStepId: step.id, // Stay on this step
                     });
 

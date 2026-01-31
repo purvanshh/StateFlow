@@ -53,12 +53,12 @@ export class WorkflowRepository {
     }
 
     async create(input: CreateWorkflowInput) {
-        const { data, error } = await this.db
-            .from('workflows')
+        const { data, error } = await (this.db
+            .from('workflows') as any)
             .insert({
                 name: input.name,
                 description: input.description ?? null,
-                definition: input.definition,
+                definition: input.definition as any,
                 status: 'active',
                 created_by: input.createdBy ?? null,
             })
@@ -70,8 +70,8 @@ export class WorkflowRepository {
     }
 
     async update(id: string, input: UpdateWorkflowInput) {
-        const { data, error } = await this.db
-            .from('workflows')
+        const { data, error } = await (this.db
+            .from('workflows') as any)
             .update(input)
             .eq('id', id)
             .select()

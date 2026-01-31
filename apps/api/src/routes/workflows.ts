@@ -3,7 +3,7 @@ import { z } from 'zod';
 // import { WorkflowRepository } from '@stateflow/db';
 // import { WorkflowEngine } from '@stateflow/workflows';
 
-const workflowsRouter = Router();
+const workflowsRouter: Router = Router();
 
 // Validation schemas
 const createWorkflowSchema = z.object({

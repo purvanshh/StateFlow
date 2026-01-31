@@ -1,6 +1,14 @@
 // Generated types from Supabase
 // Run: npx supabase gen types typescript --project-id your-project-id > types.ts
 
+export type Json =
+    | string
+    | number
+    | boolean
+    | null
+    | { [key: string]: Json | undefined }
+    | Json[]
+
 export interface Database {
     public: {
         Tables: {
@@ -23,8 +31,8 @@ export interface Database {
                     id: string;
                     workflow_id: string;
                     status: ExecutionStatus;
-                    input: Record<string, unknown>;
-                    output: Record<string, unknown> | null;
+                    input: Json;
+                    output: Json | null;
                     error: string | null;
                     current_step: string | null;
                     started_at: string | null;
@@ -40,8 +48,8 @@ export interface Database {
                     execution_id: string;
                     step_id: string;
                     status: StepStatus;
-                    input: Record<string, unknown>;
-                    output: Record<string, unknown> | null;
+                    input: Json;
+                    output: Json | null;
                     error: string | null;
                     attempt: number;
                     started_at: string | null;
@@ -58,7 +66,7 @@ export interface Database {
                     step_id: string | null;
                     level: 'debug' | 'info' | 'warn' | 'error';
                     message: string;
-                    metadata: Record<string, unknown> | null;
+                    metadata: Json | null;
                     created_at: string;
                 };
                 Insert: Omit<Database['public']['Tables']['execution_logs']['Row'], 'id' | 'created_at'>;
@@ -72,7 +80,7 @@ export interface WorkflowDefinition {
     steps: WorkflowStep[];
     trigger?: {
         type: 'manual' | 'schedule' | 'webhook';
-        config?: Record<string, unknown>;
+        config?: Json;
     };
 }
 
@@ -80,7 +88,7 @@ export interface WorkflowStep {
     id: string;
     type: string;
     name?: string;
-    config?: Record<string, unknown>;
+    config?: Json;
     next?: string;
     onError?: string;
     retryPolicy?: {

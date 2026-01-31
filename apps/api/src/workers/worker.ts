@@ -17,6 +17,7 @@ class WorkflowWorker {
     private activeExecutions = new Set<string>();
     private processedCount = 0;
     private failedCount = 0;
+    private workerId = `worker-${Math.random().toString(36).substring(7)}`;
 
     async start() {
         console.log(`
@@ -24,6 +25,7 @@ class WorkflowWorker {
 ║                                                               ║
 ║   ⚙️  StateFlow Worker Started                                 ║
 ║                                                               ║
+║   Worker ID:      ${this.workerId.padEnd(36)}                ║
 ║   Concurrency:    ${WORKER_CONCURRENCY.toString().padEnd(4)}                                       ║
 ║   Poll Interval:  ${POLL_INTERVAL}ms                                        ║
 ║                                                               ║
@@ -56,8 +58,8 @@ class WorkflowWorker {
                 const availableSlots = WORKER_CONCURRENCY - this.activeExecutions.size;
 
                 if (availableSlots > 0) {
-                    // Get pending and scheduled executions
-                    const pending = demoStore.getRunnableExecutions(availableSlots);
+                    // Claim pending and scheduled executions
+                    const pending = demoStore.claimExecutions(this.workerId, availableSlots);
 
                     for (const execution of pending) {
                         // Skip if already processing

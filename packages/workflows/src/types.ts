@@ -18,6 +18,7 @@ export interface WorkflowStep {
     next?: string;
     onError?: string;
     retryPolicy?: RetryPolicy;
+    timeoutMs?: number;
 }
 
 export interface WorkflowTrigger {
